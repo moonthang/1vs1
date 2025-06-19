@@ -1,0 +1,33 @@
+
+{
+  "id": "teamB",
+  "name": "Santa Fe",
+  "players": [
+    { "id": "B1", "name": "Andrés Mosquera", "jerseyNumber": 1, "position": "Portero", "stats": { "Partidos": 22, "Arcos en cero": 8, "Goles recibidos": 23, "Sofascore": 7.11, "Goles": 0, "Asistencia": 0 }, "imageUrl": "B1.jpg", "teamId": "teamB" },
+    { "id": "B2", "name": "Victor Moreno", "jerseyNumber": 3, "position": "Defensa", "stats": { "Partidos": 22, "Goles": 1, "Asistencia": 1, "Sofascore": 6.82 }, "imageUrl": "B2.jpg", "teamId": "teamB" },
+    { "id": "B3", "name": "Iván Scarpeta", "jerseyNumber": 15, "position": "Defensa", "stats": { "Partidos": 15, "Goles": 2, "Asistencia": 0, "Sofascore": 6.94 }, "imageUrl": "B3.jpg", "teamId": "teamB" },
+    { "id": "B4", "name": "Emmanuel Olivera", "jerseyNumber": 18, "position": "Defensa", "stats": { "Partidos": 17, "Goles": 0, "Asistencia": 0, "Sofascore":  6.77 }, "imageUrl": "B4.jpg", "teamId": "teamB" },
+    { "id": "B5", "name": "David Ramirez", "jerseyNumber": 4, "position": "Defensa", "stats": { "Partidos": 3, "Goles": 0, "Asistencia": 0, "Sofascore": 6.20 }, "imageUrl": "B5.jpg", "teamId": "teamB" },
+    { "id": "B6", "name": "Kevin Cuesta", "jerseyNumber": 6, "position": "Defensa", "stats": { "Partidos": 5, "Goles": 0, "Asistencia": 0, "Sofascore":  6.48 }, "imageUrl": "B6.jpg", "teamId": "teamB" },
+    { "id": "B7", "name": "Jeison Angulo", "jerseyNumber": 24, "position": "Defensa", "stats": { "Partidos": 19, "Goles": 1, "Asistencia": 4, "Sofascore": 6.62 }, "imageUrl": "B7.jpg", "teamId": "teamB" },
+    { "id": "B8", "name": "Christian Mafla", "jerseyNumber": 32, "position": "Defensa", "stats": { "Partidos": 22, "Goles": 1, "Asistencia": 0, "Sofascore": 6.81 }, "imageUrl": "B8.jpg", "teamId": "teamB" },
+    { "id": "B9", "name": "Jordy Monroy", "jerseyNumber": 17, "position": "Defensa", "stats": { "Partidos": 11, "Goles": 0, "Asistencia": 1, "Sofascore": 6.66 }, "imageUrl": "B9.jpg", "teamId": "teamB" },
+    { "id": "B10", "name": "Yeicar Perlaza", "jerseyNumber": 27, "position": "Defensa", "stats": { "Partidos": 15, "Goles": 0, "Asistencia": 1, "Sofascore": 6.72 }, "imageUrl": "B10.jpg", "teamId": "teamB" },
+    { "id": "B11", "name": "Elvis Perlaza", "jerseyNumber": 22, "position": "Defensa", "stats": { "Partidos": 11, "Goles": 0, "Asistencia": 1, "Sofascore": 6.71 }, "imageUrl": "B11.jpg", "teamId": "teamB" },
+    { "id": "B12", "name": "Yilmar Velásquez", "jerseyNumber": 20, "position": "Mediocampista", "stats": { "Partidos": 19, "Goles": 2, "Asistencia": 1, "Sofascore": 6.82 }, "imageUrl": "B12.jpg", "teamId": "teamB" },
+    { "id": "B13", "name": "Ewil Murillo", "jerseyNumber": 21, "position": "Mediocampista", "stats": { "Partidos": 15, "Goles": 0, "Asistencia": 0, "Sofascore": 6.56 }, "imageUrl": "B13.jpg", "teamId": "teamB" },
+    { "id": "B14", "name": "Daniel Torres", "jerseyNumber": 16, "position": "Mediocampista", "stats": { "Partidos": 20, "Goles": 1, "Asistencia": 0, "Sofascore": 6.70 }, "imageUrl": "B14.jpg", "teamId": "teamB" },
+    { "id": "B15", "name": "Leandro Angulo", "jerseyNumber": 25, "position": "Mediocampista", "stats": { "Partidos": 2, "Goles": 0, "Asistencia": 0, "Sofascore": 6.55 }, "imageUrl": "B15.jpg", "teamId": "teamB" },
+    { "id": "B16", "name": "Tomas Molina", "jerseyNumber": 31, "position": "Mediocampista", "stats": { "Partidos": 5, "Goles": 0, "Asistencia": 0, "Sofascore": 6.48 }, "imageUrl": "B16.jpg", "teamId": "teamB" },
+    { "id": "B17", "name": "Jhojan Torres", "jerseyNumber": 14, "position": "Mediocampista", "stats": { "Partidos": 18, "Goles": 1, "Asistencia": 0, "Sofascore": 6.67 }, "imageUrl": "B17.jpg", "teamId": "teamB" },
+    { "id": "B18", "name": "Alexis Zapata", "jerseyNumber": 10, "position": "Mediocampista Ofensivo", "stats": { "Partidos": 17, "Goles": 3, "Asistencia": 3, "Sofascore": 7.02 }, "imageUrl": "B18.jpg", "teamId": "teamB" },
+    { "id": "B19", "name": "Lucas Rios", "jerseyNumber": 29, "position": "Mediocampista", "stats": { "Partidos": 7, "Goles": 0, "Asistencia": 0, "Sofascore": 6.67 }, "imageUrl": "B19.jpg", "teamId": "teamB" },
+    { "id": "B20", "name": "Omar Fernández", "jerseyNumber": 8, "position": "Mediocampista", "stats": {"Partidos": 22, "Goles": 2, "Asistencia": 6, "Sofascore": 7.05}, "imageUrl": "B20.jpg", "teamId": "teamB" },
+    { "id": "B21", "name": "Omar Albornoz", "jerseyNumber": 80, "position": "Mediocampista", "stats": { "Partidos": 11, "Goles": 1, "Asistencia": 0, "Sofascore": 6.75 }, "imageUrl": "B21.jpg", "teamId": "teamB" },
+    { "id": "B22", "name": "Santiago Mosquera", "jerseyNumber": 23, "position": "Delantero", "stats": { "Partidos": 19, "Goles": 1, "Asistencia": 5, "Sofascore": 6.87 }, "imageUrl": "B22.jpg", "teamId": "teamB" },
+    { "id": "B23", "name": "Edwar López", "jerseyNumber": 28, "position": "Delantero", "stats": { "Partidos": 12, "Goles": 1, "Asistencia": 0, "Sofascore": 6.83 }, "imageUrl": "B23.jpg", "teamId": "teamB" },
+    { "id": "B24", "name": "Jhon Meléndez", "jerseyNumber": 5, "position": "Delantero", "stats": { "Partidos": 12, "Goles": 0, "Asistencia": 0, "Sofascore": 6.75 }, "imageUrl": "B24.jpg", "teamId": "teamB" },
+    { "id": "B25", "name": "Ángelo Rodriguez", "jerseyNumber": 9, "position": "Delantero", "stats": { "Partidos": 17, "Goles": 2, "Asistencia": 1, "Sofascore": 6.63 }, "imageUrl": "B25.jpg", "teamId": "teamB" },
+    { "id": "B26", "name": "Hugo Rodallega", "jerseyNumber": 11, "position": "Delantero", "stats": { "Partidos": 23, "Goles": 14, "Asistencia": 1, "Sofascore": 7.36 }, "imageUrl": "B26.jpg", "teamId": "teamB" }
+  ]
+}

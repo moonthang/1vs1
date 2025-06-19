@@ -1,0 +1,73 @@
+
+import type { Formation } from '@/types';
+
+export const formations: Formation[] = [
+  {
+    key: '4-4-2',
+    name: '4-4-2',
+    positions: [
+      { key: 'GK', label: 'POR', type: 'Portero', coordinates: { top: '92%', left: '50%' } },
+      { key: 'RB', label: 'LD', type: 'Defensa', coordinates: { top: '72%', left: '85%' } },
+      { key: 'RCB', label: 'DFC', type: 'Defensa', coordinates: { top: '75%', left: '65%' } },
+      { key: 'LCB', label: 'DFC', type: 'Defensa', coordinates: { top: '75%', left: '35%' } },
+      { key: 'LB', label: 'LI', type: 'Defensa', coordinates: { top: '72%', left: '15%' } },
+      { key: 'RM', label: 'MD', type: 'Mediocampista', coordinates: { top: '50%', left: '85%' } },
+      { key: 'RCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '55%', left: '60%' } },
+      { key: 'LCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '55%', left: '40%' } },
+      { key: 'LM', label: 'MI', type: 'Mediocampista', coordinates: { top: '50%', left: '15%' } },
+      { key: 'RST', label: 'DEL', type: 'Delantero', coordinates: { top: '20%', left: '60%' } },
+      { key: "LST", label: "DEL", type: "Delantero", coordinates: { top: "20%", left: "40%" } },
+    ],
+  },
+  {
+    key: '4-3-3-def',
+    name: '4-3-3 Def.',
+    positions: [
+      { key: 'GK', label: 'POR', type: 'Portero', coordinates: { top: '92%', left: '50%' } },
+      { key: 'RB', label: 'LD', type: 'Defensa', coordinates: { top: '72%', left: '88%' } },
+      { key: 'RCB', label: 'DFC', type: 'Defensa', coordinates: { top: '75%', left: '65%' } },
+      { key: 'LCB', label: 'DFC', type: 'Defensa', coordinates: { top: '75%', left: '35%' } },
+      { key: 'LB', label: 'LI', type: 'Defensa', coordinates: { top: '72%', left: '12%' } },
+      { key: 'RCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '50%', left: '70%' } },
+      { key: 'CM', label: 'MC', type: 'Mediocampista', coordinates: { top: '55%', left: '50%' } },
+      { key: 'LCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '50%', left: '30%' } },
+      { key: 'RW', label: 'ED', type: 'Delantero', coordinates: { top: '20%', left: '85%' } },
+      { key: 'ST', label: 'DEL', type: 'Delantero', coordinates: { top: '15%', left: '50%' } },
+      { key: 'LW', label: 'EI', type: 'Delantero', coordinates: { top: '20%', left: '15%' } },
+    ],
+  },
+  {
+    key: '4-3-3-ofe',
+    name: '4-3-3 Ofe.',
+    positions: [
+      { key: 'GK', label: 'POR', type: 'Portero', coordinates: { top: '92%', left: '50%' } },
+      { key: 'RB', label: 'LD', type: 'Defensa', coordinates: { top: '72%', left: '88%' } },
+      { key: 'RCB', label: 'DFC', type: 'Defensa', coordinates: { top: '75%', left: '65%' } },
+      { key: 'LCB', label: 'DFC', type: 'Defensa', coordinates: { top: '75%', left: '35%' } },
+      { key: 'LB', label: 'LI', type: 'Defensa', coordinates: { top: '72%', left: '12%' } },
+      { key: 'RCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '50%', left: '70%' } },
+      { key: 'CAM', label: 'MCO', type: 'Mediocampista Ofensivo', coordinates: { top: '35%', left: '50%' } },
+      { key: 'LCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '50%', left: '30%' } },
+      { key: 'RW', label: 'ED', type: 'Delantero', coordinates: { top: '20%', left: '85%' } },
+      { key: 'ST', label: 'DEL', type: 'Delantero', coordinates: { top: '15%', left: '50%' } },
+      { key: 'LW', label: 'EI', type: 'Delantero', coordinates: { top: '20%', left: '15%' } },
+    ],
+  },
+  {
+    key: '3-5-2',
+    name: '3-5-2',
+    positions: [
+      { key: 'GK', label: 'POR', type: 'Portero', coordinates: { top: '92%', left: '50%' } },
+      { key: 'RCB', label: 'DFC', type: 'Defensa', coordinates: { top: '77%', left: '70%' } },
+      { key: 'CB', label: 'DFC', type: 'Defensa', coordinates: { top: '77%', left: '50%' } },
+      { key: 'LCB', label: 'DFC', type: 'Defensa', coordinates: { top: '77%', left: '30%' } },
+      { key: 'RWB', label: 'CAD', type: 'Mediocampista', coordinates: { top: '50%', left: '90%' } },
+      { key: 'RCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '50%', left: '65%' } },
+      { key: 'CDM', label: 'MCD', type: 'Mediocampista', coordinates: { top: '60%', left: '50%' } },
+      { key: 'LCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '50%', left: '35%' } },
+      { key: 'LWB', label: 'CAI', type: 'Mediocampista', coordinates: { top: '50%', left: '10%' } },
+      { key: 'RST', label: 'DEL', type: 'Delantero', coordinates: { top: '20%', left: '60%' } },
+      { key: 'LST', label: 'DEL', type: 'Delantero', coordinates: { top: '20%', left: '40%' } },
+    ],
+  },
+];

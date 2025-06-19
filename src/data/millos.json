@@ -1,0 +1,43 @@
+
+{
+  "id": "teamA",
+  "name": "Millonarios",
+  "players": [
+    { "id": "A1", "name": "Álvaro Montero", "jerseyNumber": 31, "position": "Portero", "stats": { "Partidos": 22, "Arcos en cero": 15, "Goles recibidos": 12, "Sofascore": 7.19, "Goles": 0, "Asistencia": 0 }, "imageUrl": "A1.jpg", "teamId": "teamA" },
+    { "id": "A2", "name": "Iván Arboleda", "jerseyNumber": 1, "position": "Portero", "stats": {  "Partidos": 3, "Arcos en cero": 0, "Goles recibidos": 7, "Sofascore": 6.40, "Goles": 0, "Asistencia": 0 }, "imageUrl": "A2.jpg", "teamId": "teamA" },
+    { "id": "A3", "name": "Diego Novoa", "jerseyNumber": 12, "position": "Portero", "stats": {  "Partidos": 0, "Arcos en cero": 0, "Goles recibidos":  0, "Sofascore": 0, "Goles": 0, "Asistencia": 0 }, "imageUrl": "A3.jpg", "teamId": "teamA" },
+    { "id": "A4", "name": "Juan Pablo Vargas", "jerseyNumber": 4, "position": "Defensa", "stats": { "Partidos": 6, "Goles": 0, "Asistencia": 0, "Sofascore": 6.70 }, "imageUrl": "A4.jpg", "teamId": "teamA" },
+    { "id": "A5", "name": "Andrés Llinás", "jerseyNumber": 26, "position": "Defensa", "stats": { "Partidos": 19, "Goles": 1, "Asistencia": 0, "Sofascore": 7.16 }, "imageUrl": "A5.jpg", "teamId": "teamA" },
+    { "id": "A6", "name": "Sergio Mosquera", "jerseyNumber": 6, "position": "Defensa", "stats": { "Partidos": 10, "Goles": 0, "Asistencia": 0, "Sofascore":  6.74 }, "imageUrl": "A6.jpg", "teamId": "teamA" },
+    { "id": "A7", "name": "Jorge Arias", "jerseyNumber": 17, "position": "Defensa", "stats": { "Partidos": 18, "Goles": 0, "Asistencia": 0, "Sofascore": 7.08 }, "imageUrl": "A7.jpg", "teamId": "teamA" },
+    { "id": "A8", "name": "Alex Moreno", "jerseyNumber": 29, "position": "Defensa", "stats": { "Partidos": 0, "Goles": 0, "Asistencia": 0, "Sofascore":  0 }, "imageUrl": "A8.jpg", "teamId": "teamA" },
+    { "id": "A9", "name": "Danovis Banguero", "jerseyNumber": 20, "position": "Defensa", "stats": { "Partidos": 22, "Goles": 0, "Asistencia": 4, "Sofascore": 7.06 }, "imageUrl": "A9.jpg", "teamId": "teamA" },
+    { "id": "A10", "name": "Nicolás Giraldo", "jerseyNumber": 27, "position": "Defensa", "stats": { "Partidos": 4, "Goles": 0, "Asistencia": 1, "Sofascore": 6.70 }, "imageUrl": "A10.jpg", "teamId": "teamA" },
+    { "id": "A11", "name": "Johan Hernández", "jerseyNumber": 37, "position": "Defensa", "stats": { "Partidos": 1, "Goles": 0, "Asistencia": 0, "Sofascore": 6.50 }, "imageUrl": "A11.jpg", "teamId": "teamA" },
+    { "id": "A12", "name": "Samuel Asprilla", "jerseyNumber": 36, "position": "Defensa", "stats": { "Partidos": 0, "Goles": 0, "Asistencia": 0, "Sofascore": 0 }, "imageUrl": "A12.jpg", "teamId": "teamA" },
+    { "id": "A13", "name": "Helibelton Palacios", "jerseyNumber": 13, "position": "Defensa", "stats": { "Partidos": 18, "Goles": 1, "Asistencia": 0, "Sofascore": 6.97 }, "imageUrl": "A13.jpg", "teamId": "teamA" },
+    { "id": "A14", "name": "Delvin Alfonzo", "jerseyNumber": 22, "position": "Defensa", "stats": { "Partidos": 5, "Goles": 0, "Asistencia": 1, "Sofascore": 6.72 }, "imageUrl": "A14.jpg", "teamId": "teamA" },
+    { "id": "A15", "name": "Sander Navarro", "jerseyNumber": 34, "position": "Defensa", "stats": { "Partidos": 12, "Goles": 0, "Asistencia": 0, "Sofascore": 6.81 }, "imageUrl": "A15.jpg", "teamId": "teamA" },
+    { "id": "A16", "name": "Stiven Vega", "jerseyNumber": 28, "position": "Mediocampista", "stats": { "Partidos": 17, "Goles": 0, "Asistencia": 2, "Sofascore": 6.89 }, "imageUrl": "A16.jpg", "teamId": "teamA" },
+    { "id": "A17", "name": "Nicolás Arevalo", "jerseyNumber": 5, "position": "Mediocampista", "stats": { "Partidos": 18, "Goles": 0, "Asistencia": 1, "Sofascore": 7.18 }, "imageUrl": "A17.jpg", "teamId": "teamA" },
+    { "id": "A18", "name": "Jovani Welch", "jerseyNumber": 24, "position": "Mediocampista", "stats": { "Partidos": 0, "Goles": 0, "Asistencia": 0, "Sofascore": 0 }, "imageUrl": "A18.jpg", "teamId": "teamA" },
+    { "id": "A19", "name": "Felix Charrupí", "jerseyNumber": 7, "position": "Mediocampista", "stats": { "Partidos": 7, "Goles": 0, "Asistencia": 0, "Sofascore": 6.50 }, "imageUrl": "A19.jpg", "teamId": "teamA" },
+    { "id": "A20", "name": "Juan Carlos Pereira", "jerseyNumber": 21, "position": "Mediocampista", "stats": { "Partidos": 14, "Goles": 1, "Asistencia": 0, "Sofascore": 6.73 }, "imageUrl": "A20.jpg", "teamId": "teamA" },
+    { "id": "A21", "name": "Dewar Victoria", "jerseyNumber": 8, "position": "Mediocampista", "stats": { "Partidos": 12, "Goles": 0, "Asistencia": 0, "Sofascore": 6.97 }, "imageUrl": "A21.jpg", "teamId": "teamA" },
+    { "id": "A22", "name": "Daniel Cataño", "jerseyNumber": 10, "position": "Mediocampista Ofensivo", "stats": {"Partidos": 20, "Goles": 1, "Asistencia": 2, "Sofascore": 7.05}, "imageUrl": "A22.jpg", "teamId": "teamA" },
+    { "id": "A23", "name": "David Silva", "jerseyNumber": 14, "position": "Mediocampista", "stats": { "Partidos": 3, "Goles": 1, "Asistencia": 0, "Sofascore": 6.90 }, "imageUrl": "A23.jpg", "teamId": "teamA" },
+    { "id": "A24", "name": "Daniel Ruiz", "jerseyNumber": 18, "position": "Delantero", "stats": { "Partidos": 23, "Goles": 3, "Asistencia": 3, "Sofascore": 7.22 }, "imageUrl": "A24.jpg", "teamId": "teamA" },
+    { "id": "A25", "name": "Daniel Mantilla", "jerseyNumber": 11, "position": "Delantero", "stats": { "Partidos": 9, "Goles": 0, "Asistencia": 3, "Sofascore": 6.77 }, "imageUrl": "A25.jpg", "teamId": "teamA" },
+    { "id": "A26", "name": "Kevin Palacios", "jerseyNumber": 77, "position": "Delantero", "stats": { "Partidos": 14, "Goles": 5, "Asistencia": 0, "Sofascore": 7.00 }, "imageUrl": "A26.jpg", "teamId": "teamA" },
+    { "id": "A27", "name": "Jhon Córdoba", "jerseyNumber": 15, "position": "Delantero", "stats": { "Partidos": 19, "Goles": 2, "Asistencia": 1, "Sofascore": 6.76 }, "imageUrl": "A27.jpg", "teamId": "teamA" },
+    { "id": "A28", "name": "Neyser Villareal", "jerseyNumber": 88, "position": "Delantero", "stats": { "Partidos": 14, "Goles": 0, "Asistencia": 2, "Sofascore": 6.88 }, "imageUrl": "A28.jpg", "teamId": "teamA" },
+    { "id": "A29", "name": "Leonardo Castro", "jerseyNumber": 23, "position": "Delantero", "stats": { "Partidos": 10, "Goles": 6, "Asistencia": 0, "Sofascore": 7.07 }, "imageUrl": "A29.jpg", "teamId": "teamA" },
+    { "id": "A30", "name": "Santiago Giordana", "jerseyNumber": 32, "position": "Delantero", "stats": { "Partidos": 17, "Goles": 2, "Asistencia": 0, "Sofascore": 6.68 }, "imageUrl": "A30.jpg", "teamId": "teamA" },
+    { "id": "A31", "name": "Jader Valencia", "jerseyNumber": 16, "position": "Delantero", "stats": {"Partidos": 12, "Goles": 3, "Asistencia": 1, "Sofascore": 6.90}, "imageUrl": "A31.jpg", "teamId": "teamA" },
+    { "id": "A32", "name": "Radamel Falcao", "jerseyNumber": 9, "position": "Delantero", "stats": { "Partidos": 11, "Goles": 5, "Asistencia": 0, "Sofascore": 6.94 }, "imageUrl": "A32.jpg", "teamId": "teamA" },
+    { "id": "A33", "name": "Juan Carvajal", "jerseyNumber": 0, "position": "Delantero", "stats": { "Partidos": 0, "Goles": 0, "Asistencia": 0, "Sofascore": 0 }, "imageUrl": "A33.jpg", "teamId": "teamA" },
+    { "id": "A34", "name": "Luis Marimon", "jerseyNumber": 43, "position": "Delantero", "stats": { "Partidos": 15, "Goles": 3, "Asistencia": 0, "Sofascore": 6.88 }, "imageUrl": "A34.jpg", "teamId": "teamA" }
+  ]
+}
+
+    
