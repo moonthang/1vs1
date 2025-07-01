@@ -7,7 +7,7 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 // Clave para el estado en localStorage, versionada para evitar conflictos.
-const LINEUP_STATE_KEY_PREFIX = 'lineupShowdownState_v3_';
+const LINEUP_STATE_KEY_PREFIX = '1vs1FutDraftState_v3_';
 
 interface LineupState {
   teamA: Team | null;
@@ -18,6 +18,7 @@ interface LineupState {
   isHydrated: boolean;
   isLoading: boolean;
   isComparisonMode: boolean;
+  isBenchVisible: boolean;
 
   loadTeams: (teamAId: string, teamBId?: string) => Promise<void>;
   hydrateFromLocalStorage: (teamAId: string, teamBId?: string) => void;
@@ -25,6 +26,7 @@ interface LineupState {
   setPlayerInLineup: (positionSlotKey: string, player: Player) => void;
   clearPlayerFromLineup: (positionSlotKey: string) => void;
   resetLineup: () => void;
+  toggleBenchVisibility: () => void;
   getEligiblePlayersForSlot: (positionSlotKey: string) => { teamAPlayers: Player[]; teamBPlayers: Player[] };
   getPlayerCountsInLineup: () => { teamACount: number, teamBCount: number, totalCount: number };
 }
@@ -58,6 +60,7 @@ export const useLineupStore = create<LineupState>((set, get) => ({
   isHydrated: false,
   isLoading: true,
   isComparisonMode: false,
+  isBenchVisible: true,
 
   loadTeams: async (teamAId: string, teamBId?: string) => {
     set({ isLoading: true, isHydrated: false, idealLineup: {}, teamA: null, teamB: null, isComparisonMode: !!teamBId });
@@ -91,13 +94,14 @@ export const useLineupStore = create<LineupState>((set, get) => ({
       if (storedState) {
         try {
           const parsedState = JSON.parse(storedState);
-          const { selectedFormationKey, idealLineup } = parsedState;
+          const { selectedFormationKey, idealLineup, isBenchVisible } = parsedState;
           
           const formationExists = get().formations.some(f => f.key === selectedFormationKey);
 
           set({
             selectedFormationKey: formationExists ? selectedFormationKey : (get().formations.length > 0 ? get().formations[0].key : null),
             idealLineup: idealLineup || {},
+            isBenchVisible: isBenchVisible !== false, // Default to true
           });
         } catch (e) {
           console.error("Error hydrating state from localStorage:", e);
@@ -111,10 +115,10 @@ export const useLineupStore = create<LineupState>((set, get) => ({
   setSelectedFormation: (formationKey: string) => {
     set({ selectedFormationKey: formationKey, idealLineup: {} });
     if (typeof window !== 'undefined') {
-      const { teamA, teamB, selectedFormationKey: newKey } = get();
+      const { teamA, teamB, selectedFormationKey: newKey, isBenchVisible } = get();
       if (teamA) {
         const key = getLineupStateKey(teamA.id, teamB?.id);
-        localStorage.setItem(key, JSON.stringify({ selectedFormationKey: newKey, idealLineup: {} }));
+        localStorage.setItem(key, JSON.stringify({ selectedFormationKey: newKey, idealLineup: {}, isBenchVisible }));
       }
     }
   },
@@ -127,10 +131,10 @@ export const useLineupStore = create<LineupState>((set, get) => ({
       },
     }));
     if (typeof window !== 'undefined') {
-      const { teamA, teamB, selectedFormationKey, idealLineup } = get();
+      const { teamA, teamB, selectedFormationKey, idealLineup, isBenchVisible } = get();
        if (teamA) {
         const key = getLineupStateKey(teamA.id, teamB?.id);
-        localStorage.setItem(key, JSON.stringify({ selectedFormationKey, idealLineup }));
+        localStorage.setItem(key, JSON.stringify({ selectedFormationKey, idealLineup, isBenchVisible }));
       }
     }
   },
@@ -142,25 +146,36 @@ export const useLineupStore = create<LineupState>((set, get) => ({
       return { idealLineup: newIdealLineup };
     });
     if (typeof window !== 'undefined') {
-      const { teamA, teamB, selectedFormationKey, idealLineup } = get();
+      const { teamA, teamB, selectedFormationKey, idealLineup, isBenchVisible } = get();
        if (teamA) {
         const key = getLineupStateKey(teamA.id, teamB?.id);
-        localStorage.setItem(key, JSON.stringify({ selectedFormationKey, idealLineup }));
+        localStorage.setItem(key, JSON.stringify({ selectedFormationKey, idealLineup, isBenchVisible }));
       }
     }
   },
 
   resetLineup: () => {
-    set({ idealLineup: {} });
+    set({ idealLineup: {}, isBenchVisible: true });
     if (typeof window !== 'undefined') {
       const { teamA, teamB, selectedFormationKey } = get();
        if (teamA) {
         const key = getLineupStateKey(teamA.id, teamB?.id);
-        localStorage.setItem(key, JSON.stringify({ selectedFormationKey, idealLineup: {} }));
+        localStorage.setItem(key, JSON.stringify({ selectedFormationKey, idealLineup: {}, isBenchVisible: true }));
       }
     }
   },
   
+  toggleBenchVisibility: () => {
+    set((state) => ({ isBenchVisible: !state.isBenchVisible }));
+    if (typeof window !== 'undefined') {
+      const { teamA, teamB, selectedFormationKey, idealLineup, isBenchVisible } = get();
+      if (teamA) {
+        const key = getLineupStateKey(teamA.id, teamB?.id);
+        localStorage.setItem(key, JSON.stringify({ selectedFormationKey, idealLineup, isBenchVisible }));
+      }
+    }
+  },
+
   getEligiblePlayersForSlot: (positionSlotKey: string) => {
     const { teamA, teamB, formations, selectedFormationKey, idealLineup } = get();
     if (!teamA) return { teamAPlayers: [], teamBPlayers: [] };

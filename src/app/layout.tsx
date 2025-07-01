@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Lineup Showdown',
+  title: '1vs1 FutDraft',
   description: 'Crea, compara y comparte alineaciones de fútbol.',
 };
 

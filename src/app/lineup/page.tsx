@@ -11,13 +11,14 @@ import { FormationSelector } from '@/components/FormationSelector';
 import { FootballPitch } from '@/components/FootballPitch';
 import { PlayerComparisonModal } from '@/components/PlayerComparisonModal';
 import { Button } from '@/components/ui/button';
-import { Download, Users, LayoutDashboard, FileImage, PieChart, Trophy, ArrowLeft } from 'lucide-react';
+import { Download, Users, LayoutDashboard, FileImage, PieChart, Trophy, ArrowLeft, Ban } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import logo1vs1 from '@/assets/logo/1vs1.png';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 let htmlToImage: typeof import('html-to-image') | null = null;
 const PT_SANS_FONT_URL = "https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap";
@@ -35,7 +36,9 @@ function LineupShowdownComponent() {
     loadTeams,
     isComparisonMode,
     idealLineup,
-    setPlayerInLineup
+    setPlayerInLineup,
+    isBenchVisible,
+    toggleBenchVisibility,
   } = useLineupStore();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -217,14 +220,38 @@ function LineupShowdownComponent() {
         <aside className="lg:col-span-3 space-y-6">
            <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center text-lg font-headline text-primary"><FileImage className="mr-2 h-5 w-5"/>Exportar</CardTitle>
+              <CardTitle className="flex items-center text-lg font-headline text-primary"><LayoutDashboard className="mr-2 h-5 w-5"/>Opciones</CardTitle>
             </CardHeader>
             <CardContent>
-              <Button onClick={handleExportLineup} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground mt-4" disabled={!htmlToImage || !fontCss}>
-                <Download className="mr-2 h-4 w-4" />
-                Exportar como Imagen
-              </Button>
-               {(!htmlToImage || !fontCss) && <p className="text-xs text-muted-foreground mt-2 text-center">Cargando...</p>}
+              <div className="flex flex-col gap-4 pt-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="bench-toggle" className="flex items-center gap-2 cursor-pointer">
+                    <Ban className="h-4 w-4" />
+                    <span>Ocultar Banquillo</span>
+                  </Label>
+                  <Switch
+                    id="bench-toggle"
+                    checked={!isBenchVisible}
+                    onCheckedChange={toggleBenchVisibility}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                   <Label className="flex items-center gap-2">
+                    <FileImage className="h-4 w-4" />
+                    <span>Exportar como Imagen</span>
+                  </Label>
+                  <Button 
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleExportLineup} 
+                    disabled={!htmlToImage || !fontCss}
+                    aria-label="Exportar"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              {(!htmlToImage || !fontCss) && <p className="text-xs text-muted-foreground mt-2 text-center">Cargando...</p>}
             </CardContent>
           </Card>
 
@@ -269,7 +296,7 @@ function LineupShowdownComponent() {
       {teamA && <PlayerComparisonModal isOpen={isModalOpen} onClose={handleCloseModal} positionSlotKey={currentSlotKey} />}
       
       <footer className="mt-12 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Lineup Showdown.</p>
+        <p>&copy; {new Date().getFullYear()} 1vs1 FutDraft.</p>
       </footer>
     </div>
   );

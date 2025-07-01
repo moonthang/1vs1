@@ -1,12 +1,12 @@
 
-# 🏆 Lineup Showdown ⚽
+# 🏆 1vs1 FutDraft ⚽
 
 [![Estado del Proyecto](https://img.shields.io/badge/estado-en%20desarrollo-yellowgreen)](https://github.com/moonthang/1vs1)
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 
-Lineup Showdown es una aplicación web interactiva y altamente personalizable diseñada para aficionados al fútbol que desean crear, visualizar y compartir alineaciones de manera profesional.
+1vs1 FutDraft es una aplicación web interactiva y altamente personalizable diseñada para aficionados al fútbol que desean crear, visualizar y compartir alineaciones de manera profesional.
 
 
 ## 📋 Tabla de Contenidos
@@ -22,7 +22,7 @@ Lineup Showdown es una aplicación web interactiva y altamente personalizable di
 
 ## 📝 Descripción Detallada
 
-**Lineup Showdown** es una aplicación web interactiva y altamente personalizable, diseñada para que los aficionados al fútbol puedan crear, visualizar y compartir alineaciones de manera profesional. Este proyecto, desarrollado como parte de mi portafolio, demuestra la capacidad de construir una aplicación full-stack moderna, interactiva y escalable.
+**1vs1 FutDraft** es una aplicación web interactiva y altamente personalizable, diseñada para que los aficionados al fútbol puedan crear, visualizar y compartir alineaciones de manera profesional. Este proyecto, desarrollado como parte de mi portafolio, demuestra la capacidad de construir una aplicación full-stack moderna, interactiva y escalable.
 
 La plataforma permite a los usuarios sumergirse en la estrategia táctica del fútbol a través de dos modos principales:
 
@@ -56,7 +56,7 @@ Además, la aplicación incluye un **Panel de Administración** protegido por co
 ### **Backend y Base de Datos**
 | Tecnología | Descripción |
 | :--- | :--- |
-| <img src="https://cdn.worldvectorlogo.com/logos/firebase.svg" width="20" height="20" alt="Firebase"/> **Firebase** | Utilizado como el backend principal. **Cloud Firestore** actúa como la base de datos NoSQL en tiempo real para almacenar equipos, jugadores y estadísticas. |
+| <img src="https://cdn.worldvectorlogo.com/logos/firebase.svg" width="20" height="20" alt="Firebase"/> **Firebase** | Utilizado como el backend principal. **Cloud Firestore** actúa como la base de datos NoSQL en tiempo real para almacenar equipos, jugadores y estadísticas. **Firebase Authentication** se usa para proteger el panel de administración. |
 
 ### **Gestión de Imágenes** 
 | Tecnología | Descripción |
@@ -66,6 +66,7 @@ Además, la aplicación incluye un **Panel de Administración** protegido por co
 ## ✨ Características Principales
 
 *   ✅ **Gestión Completa desde el Admin:** Crear, editar y eliminar equipos, jugadores y directores técnicos a través de una interfaz de administración intuitiva.
+*   🔐 **Autenticación Segura:** El panel de administración está protegido con Firebase Authentication (correo y contraseña).
 *   🎨 **Personalización Visual de Equipos:** Asignar logos, fotos, colores primarios/secundarios y estadísticas detalladas a cada equipo y jugador.
 *   🏳️ **Nacionalidad con Banderas:** Cada jugador y entrenador muestra su nacionalidad con una bandera. La selección se realiza a través de un buscador de países intuitivo y visual.
 *   📊 **Selección de Formación Táctica:** Elige entre formaciones populares (4-4-2, 4-3-3, 3-5-2, etc.) que se reflejan visualmente en un campo de fútbol interactivo.
@@ -74,6 +75,7 @@ Además, la aplicación incluye un **Panel de Administración** protegido por co
 *   🖼️ **Exportación a Imagen:** Descarga una imagen de alta calidad de tu alineación final, lista para compartir en redes sociales.
 *   💾 **Persistencia de Datos:** Las alineaciones se guardan en el `localStorage` del navegador, permitiendo a los usuarios continuar donde lo dejaron.
 *   📱 **Interfaz Responsiva:** Diseño completamente adaptable que funciona a la perfección en dispositivos de escritorio, tabletas y móviles.
+*   🔄 **Importación/Exportación de Datos:** Respalda y restaura toda la información de los equipos con archivos JSON.
 
 ## 📸 Capturas de Pantalla
 
@@ -111,7 +113,11 @@ El proyecto sigue una estructura organizada basada en las mejores prácticas de 
 │   │   └── admin/          # Rutas protegidas del panel de admin
 │   ├── components/         # Componentes de React reutilizables
 │   │   ├── ui/             # Componentes base de ShadCN UI
-│   │   └── ...             # Componentes personalizados (FootballPitch, PlayerCard, etc.)
+│   │   ├── FootballPitch.tsx   # Campo de fútbol interactivo que muestra la alineación.
+│   │   ├── PlayerCard.tsx      # Tarjeta para mostrar la información de un jugador.
+│   │   ├── PlayerSlot.tsx      # Círculo interactivo que representa una posición en el campo.
+│   │   ├── FormationSelector.tsx # Permite al usuario elegir una formación táctica.
+│   │   └── PlayerComparisonModal.tsx # Modal para buscar y seleccionar jugadores.
 │   ├── data/               # Datos estáticos (ej. lista de países)
 │   ├── hooks/              # Hooks personalizados de React (use-mobile, use-toast)
 │   ├── lib/                # Funciones de utilidad y configuraciones (firebase, imagekit, etc.)

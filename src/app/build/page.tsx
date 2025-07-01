@@ -128,7 +128,7 @@ export default function BuildPage() {
       </main>
       
       <footer className="mt-12 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Lineup Showdown.</p>
+        <p>&copy; {new Date().getFullYear()} 1vs1 FutDraft.</p>
       </footer>
     </div>
   );

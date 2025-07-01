@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, PlusCircle, Eye, Edit, Trash2, Loader2, UploadCloud, Download, X } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Eye, Edit, Trash2, Loader2, UploadCloud, Download, X, LogOut } from 'lucide-react';
 import type { TeamInfo } from '@/types';
 import {
   Dialog,
@@ -30,8 +30,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { uploadImage, deleteImage } from '@/actions/uploadActions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -381,20 +382,32 @@ export default function AdminPage() {
     const [teamToEdit, setTeamToEdit] = useState<TeamInfo | null>(null);
     const [teamToDelete, setTeamToDelete] = useState<TeamInfo | null>(null);
     const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isLoadingAuth, setIsLoadingAuth] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importData, setImportData] = useState<{ teams: any[] } | null>(null);
     const [isImporting, setIsImporting] = useState(false);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            if (sessionStorage.getItem('isAdminAuthenticated') === 'true') {
+        const unsubscribe = onAuthStateChanged(auth, user => {
+            if (user) {
                 setIsAuthorized(true);
                 fetchTeams();
             } else {
                 router.replace('/');
             }
-        }
+            setIsLoadingAuth(false);
+        });
+        return () => unsubscribe();
     }, [router]);
+
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+            router.push('/');
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudo cerrar la sesión." });
+        }
+    };
 
     const fetchTeams = async () => {
         setIsLoading(true);
@@ -486,7 +499,7 @@ export default function AdminPage() {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `lineup-showdown-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.download = `1vs1-futdraft-backup-${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -553,13 +566,17 @@ export default function AdminPage() {
         }
     };
 
-    if (!isAuthorized) {
+    if (isLoadingAuth) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <Loader2 className="mr-2 h-8 w-8 animate-spin" />
                 <span>Verificando acceso...</span>
             </div>
         );
+    }
+    
+    if (!isAuthorized) {
+        return null;
     }
 
     return (
@@ -586,6 +603,10 @@ export default function AdminPage() {
                         <Button variant="outline" onClick={handleExport}>
                             <Download className="mr-2 h-5 w-5" />
                             Exportar
+                        </Button>
+                        <Button variant="destructive" onClick={handleSignOut}>
+                            <LogOut className="mr-2 h-5 w-5" />
+                            Cerrar Sesión
                         </Button>
                     </div>
                 </header>
@@ -754,5 +775,3 @@ export default function AdminPage() {
         </div>
     );
 }
-
-    

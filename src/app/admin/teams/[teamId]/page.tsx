@@ -39,7 +39,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { uploadImage, deleteImage } from '@/actions/uploadActions';
 import { IMAGEKIT_URL_ENDPOINT } from '@/lib/imagekit';
@@ -571,6 +572,7 @@ export default function TeamViewPage() {
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
     const [selectedPosition, setSelectedPosition] = useState('all');
     const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isLoadingAuth, setIsLoadingAuth] = useState(true);
     
     const positionOptions = ['all', ...playerPositions];
 
@@ -589,13 +591,15 @@ export default function TeamViewPage() {
     }, [team]);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            if (sessionStorage.getItem('isAdminAuthenticated') === 'true') {
+        const unsubscribe = onAuthStateChanged(auth, user => {
+            if (user) {
                 setIsAuthorized(true);
             } else {
                 router.replace('/');
             }
-        }
+            setIsLoadingAuth(false);
+        });
+        return () => unsubscribe();
     }, [router]);
 
 
@@ -744,13 +748,17 @@ export default function TeamViewPage() {
         setSelectedPlayer(prev => (prev?.id === player.id ? null : player));
     };
 
-    if (!isAuthorized) {
+    if (isLoadingAuth) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <Loader2 className="mr-2 h-8 w-8 animate-spin" />
                 <span>Verificando acceso...</span>
             </div>
         );
+    }
+
+    if (!isAuthorized) {
+        return null;
     }
 
     if (loading) {
@@ -968,5 +976,3 @@ export default function TeamViewPage() {
         </div>
     );
 }
-
-    

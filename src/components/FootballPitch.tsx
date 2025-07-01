@@ -10,10 +10,11 @@ interface FootballPitchProps {
 }
 
 export function FootballPitch({ onSlotClick }: FootballPitchProps) {
-  const { selectedFormationKey, formations, idealLineup } = useLineupStore(state => ({
+  const { selectedFormationKey, formations, idealLineup, isBenchVisible } = useLineupStore(state => ({
     selectedFormationKey: state.selectedFormationKey,
     formations: state.formations,
     idealLineup: state.idealLineup,
+    isBenchVisible: state.isBenchVisible,
   }));
 
   const currentFormation = formations.find(f => f.key === selectedFormationKey);
@@ -54,40 +55,42 @@ export function FootballPitch({ onSlotClick }: FootballPitchProps) {
         </CardContent>
       </Card>
       
-      <Card className="w-full max-w-xl mt-4 py-2 bg-card rounded-lg shadow-md">
-        <CardHeader className="p-2 pt-0 pb-2">
-            <CardTitle className="text-center text-primary font-headline text-base">Banquillo</CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center gap-1 flex-wrap py-1 px-0">
-            <PlayerSlot
-              key="COACH_SLOT"
-              positionSlot={{ 
-                key: 'COACH_SLOT', 
-                label: 'DT', 
-                type: 'Delantero', 
-                coordinates: { top: '0', left: '0' } 
-              }}
-              selectedPlayer={idealLineup['COACH_SLOT'] || null}
-              onSlotClick={onSlotClick}
-              size="small"
-            />
-          
-          {substituteSlots.map(sub => (
-            <PlayerSlot 
-              key={sub.key} 
-              positionSlot={{ 
-                key: sub.key, 
-                label: sub.label, 
-                type: 'Delantero', 
-                coordinates: { top: '0', left: '0' } 
-              }}
-              selectedPlayer={idealLineup[sub.key] || null}
-              onSlotClick={onSlotClick}
-              size="small"
-            />
-          ))}
-        </CardContent>
-      </Card>
+      {isBenchVisible && (
+        <Card className="w-full max-w-xl mt-4 py-2 bg-card rounded-lg shadow-md">
+          <CardHeader className="p-2 pt-0 pb-2">
+              <CardTitle className="text-center text-primary font-headline text-base">Banquillo</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center items-center gap-1 flex-wrap py-1 px-0">
+              <PlayerSlot
+                key="COACH_SLOT"
+                positionSlot={{ 
+                  key: 'COACH_SLOT', 
+                  label: 'DT', 
+                  type: 'Delantero', 
+                  coordinates: { top: '0', left: '0' } 
+                }}
+                selectedPlayer={idealLineup['COACH_SLOT'] || null}
+                onSlotClick={onSlotClick}
+                size="small"
+              />
+            
+            {substituteSlots.map(sub => (
+              <PlayerSlot 
+                key={sub.key} 
+                positionSlot={{ 
+                  key: sub.key, 
+                  label: sub.label, 
+                  type: 'Delantero', 
+                  coordinates: { top: '0', left: '0' } 
+                }}
+                selectedPlayer={idealLineup[sub.key] || null}
+                onSlotClick={onSlotClick}
+                size="small"
+              />
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

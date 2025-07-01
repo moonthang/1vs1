@@ -70,4 +70,21 @@ export const formations: Formation[] = [
       { key: 'LST', label: 'DEL', type: 'Delantero', coordinates: { top: '20%', left: '40%' } },
     ],
   },
+  {
+    key: '3-4-1-2',
+    name: '3-4-1-2',
+    positions: [
+      { key: 'GK', label: 'POR', type: 'Portero', coordinates: { top: '92%', left: '50%' } },
+      { key: 'LCB', label: 'DFC', type: 'Defensa', coordinates: { top: '77%', left: '30%' } },
+      { key: 'CB', label: 'DFC', type: 'Defensa', coordinates: { top: '77%', left: '50%' } },
+      { key: 'RCB', label: 'DFC', type: 'Defensa', coordinates: { top: '77%', left: '70%' } },
+      { key: 'LM', label: 'MI', type: 'Mediocampista', coordinates: { top: '50%', left: '15%' } },
+      { key: 'LCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '55%', left: '40%' } },
+      { key: 'RCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '55%', left: '60%' } },
+      { key: 'RM', label: 'MD', type: 'Mediocampista', coordinates: { top: '50%', left: '85%' } },
+      { key: 'CAM', label: 'MCO', type: 'Mediocampista', coordinates: { top: '35%', left: '50%' } },
+      { key: 'LST', label: 'DEL', type: 'Delantero', coordinates: { top: '20%', left: '40%' } },
+      { key: 'RST', label: 'DEL', type: 'Delantero', coordinates: { top: '20%', left: '60%' } },
+    ],
+  },
 ];
