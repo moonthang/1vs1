@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: '1 VS 1',
-  description: '1 vs 1 Millonarios - Santa Fe',
+  title: 'Lineup Showdown',
+  description: 'Crea, compara y comparte alineaciones de fútbol.',
 };
 
 export default function RootLayout({

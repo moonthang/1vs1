@@ -21,13 +21,13 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'ik.imagekit.io',
         port: '',
-        pathname: '/mdjzw07s9/teamA/**', // Specific path for teamA
+        pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: 'ik.imagekit.io',
+        hostname: 'flagcdn.com',
         port: '',
-        pathname: '/mdjzw07s9/teamB/**', // Specific path for teamB
+        pathname: '/**',
       }
     ],
   },

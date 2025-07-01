@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Player } from '@/types';
@@ -6,6 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { User, Target, ShieldCheck, Zap, ArrowRightLeft, Dumbbell, ListChecks, Goal, Handshake, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { IMAGEKIT_URL_ENDPOINT } from '@/lib/imagekit';
 
 interface PlayerCardProps {
   player: Player;
@@ -36,36 +36,36 @@ const StatIcon = ({ statName }: { statName: string }) => {
 
 const preferredStatsOrder: (keyof Player['stats'])[] = ['Partidos', 'Goles', 'Asistencia', 'Arcos en cero', 'Goles recibidos', 'Sofascore'];
 
-const IMAGEKIT_URL_ENDPOINT = (process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "").trim();
-
 export function PlayerCard({ player, onSelect, isSelected, showStats = false, isUnavailable = false }: PlayerCardProps) {
-  const getDefaultPlayerImageUrl = () => 
-    `https://placehold.co/${showStats ? '40x53' : '48x48'}.png?text=${player.name.charAt(0) || 'P'}`;
   
-  const getInitialImageUrl = () => {
-    if (IMAGEKIT_URL_ENDPOINT && player.imageUrl) {
-      return `${IMAGEKIT_URL_ENDPOINT}/${player.teamId}/${player.imageUrl}`;
+  const getImageUrl = () => {
+    let imageUrl = player.imageUrl || '';
+    
+    if (!imageUrl) {
+        return `https://placehold.co/${showStats ? '120x120' : '48x48'}.png?text=${player.name.charAt(0) || 'P'}`;
     }
-    return getDefaultPlayerImageUrl();
+
+    if (!imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+        return `${IMAGEKIT_URL_ENDPOINT}/${player.teamId}/${imageUrl}`;
+    }
+    
+    return imageUrl;
   };
 
-  const [currentImageUrl, setCurrentImageUrl] = useState(getInitialImageUrl());
+  const calculatedImageUrl = getImageUrl();
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    setCurrentImageUrl(getInitialImageUrl());
-  }, [player.imageUrl, player.teamId, player.name, showStats]);
+    setHasError(false);
+  }, [calculatedImageUrl]);
 
-  const handleImageError = () => {
-    setCurrentImageUrl(`https://placehold.co/${showStats ? '120x12' : '48x48'}.png?text=Err`);
-  };
-
-  const isActualImageKitImage = !!(IMAGEKIT_URL_ENDPOINT && player.imageUrl && !currentImageUrl.startsWith('https://placehold.co'));
-  const isPlaceholderImage = currentImageUrl.startsWith('https://placehold.co');
-  const shouldBeUnoptimized = isActualImageKitImage || isPlaceholderImage;
-
+  const finalSrc = hasError 
+    ? `https://placehold.co/${showStats ? '120x120' : '48x48'}.png?text=Err` 
+    : calculatedImageUrl;
+  
   return (
     <Card
-      className={`transition-all duration-200 ease-in-out hover:shadow-lg
+      className={`relative transition-all duration-200 ease-in-out hover:shadow-lg
         ${isSelected ? 'ring-2 ring-accent' : ''}
         ${isUnavailable ? 'opacity-60 bg-muted cursor-not-allowed' : (onSelect ? 'cursor-pointer' : '')}
       `}
@@ -73,74 +73,95 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
       aria-selected={isSelected}
       aria-disabled={isUnavailable}
       tabIndex={isUnavailable || !onSelect ? -1 : 0}
-      onKeyDown={isUnavailable || !onSelect ? undefined : (e) => e.key === 'Enter' && onSelect(player)}
+      onKeyDown={isUnavailable || !onSelect ? undefined : (e) => (e.key === 'Enter' || e.key === ' ') && onSelect(player)}
     >
       {showStats ? (
         <div className="grid grid-cols-10 gap-x-2 p-2 items-start">
           <div className="col-span-3 flex-shrink-0">
             <Image
-              src={currentImageUrl}
+              key={finalSrc}
+              src={finalSrc}
               alt={player.name}
               width={120} 
               height={120}
               className="rounded-md object-cover aspect-[3/4] border border-muted"
-              onError={handleImageError}
-              unoptimized={shouldBeUnoptimized}
+              onError={() => setHasError(true)}
             />
           </div>
 
           <div className="col-span-3 flex flex-col justify-start">
             <CardTitle className="text-sm font-headline leading-tight mb-1">{player.name}</CardTitle>
-            <CardDescription className="text-xs">#{player.jerseyNumber} - {player.position}</CardDescription>
+            <CardDescription className="text-xs">
+                {player.position === 'DT' ? player.position : `#${player.jerseyNumber} - ${player.position}`}
+            </CardDescription>
+             {player.nationality && (
+                <div className="mt-1">
+                  <Image 
+                      src={`https://flagcdn.com/w20/${player.nationality.toLowerCase()}.png`}
+                      alt={`${player.nationality} flag`}
+                      width={16}
+                      height={12}
+                      className="border border-muted"
+                  />
+                </div>
+            )}
           </div>
 
-          {player.stats && (
+          {showStats && (
             <div className="col-span-4">
               <div className="space-y-0.5 text-xs">
                 {preferredStatsOrder.map((statName) => {
-                  const statValue = player.stats[statName];
-                  if (statValue !== undefined) {
-                    return (
-                      <div key={statName} className="flex items-center">
-                        <StatIcon statName={statName as string} />
-                        <span className="capitalize truncate">{statName}:</span>
-                        <span className="ml-auto font-semibold">{statValue}</span>
-                      </div>
-                    );
+                  const isGoalkeeper = player.position === 'Portero';
+                  const goalkeeperStats: (keyof Player['stats'])[] = ['Arcos en cero', 'Goles recibidos'];
+
+                  if (!isGoalkeeper && goalkeeperStats.includes(statName)) {
+                    return null;
                   }
-                  return null;
+
+                  const statValue = player.stats?.[statName];
+                  
+                  return (
+                    <div key={statName} className="flex items-center">
+                      <StatIcon statName={statName as string} />
+                      <span className="capitalize truncate">{statName}:</span>
+                      <span className="ml-auto font-semibold">
+                        {statValue ?? '--'}
+                      </span>
+                    </div>
+                  );
                 })}
-                {Object.entries(player.stats)
-                  .filter(([key]) => !preferredStatsOrder.includes(key as keyof Player['stats']))
-                  .map(([statName, statValue]) => (
-                    statValue !== undefined && (
-                      <div key={statName} className="flex items-center">
-                        <StatIcon statName={statName} />
-                        <span className="capitalize truncate">{statName.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                        <span className="ml-auto font-semibold">{statValue}</span>
-                      </div>
-                    )
-                ))}
               </div>
             </div>
           )}
-          {!player.stats && <div className="col-span-4"></div>}
         </div>
       ) : (
         <CardHeader className="p-4">
           <div className="flex items-center space-x-3">
             <Image
-              src={currentImageUrl}
+              key={finalSrc}
+              src={finalSrc}
               alt={player.name}
               width={48}
               height={48}
               className="rounded-full object-cover"
-              onError={handleImageError}
-              unoptimized={shouldBeUnoptimized}
+              onError={() => setHasError(true)}
             />
             <div>
               <CardTitle className="text-base font-headline">{player.name}</CardTitle>
-              <CardDescription className="text-xs">#{player.jerseyNumber} - {player.position}</CardDescription>
+              <CardDescription className="text-xs">
+                {player.position === 'DT' ? player.position : `#${player.jerseyNumber} - ${player.position}`}
+              </CardDescription>
+              {player.nationality && (
+                  <div className="mt-1">
+                    <Image 
+                        src={`https://flagcdn.com/w20/${player.nationality.toLowerCase()}.png`}
+                        alt={`${player.nationality} flag`}
+                        width={16}
+                        height={12}
+                        className="border border-muted"
+                    />
+                  </div>
+              )}
             </div>
           </div>
         </CardHeader>

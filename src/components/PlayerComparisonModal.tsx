@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Player } from '@/types';
@@ -31,7 +30,7 @@ const sortOptions: { value: SortCriteria; label: string }[] = [
 ];
 
 export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: PlayerComparisonModalProps) {
-  const { teamA, teamB, getEligiblePlayersForSlot, setPlayerInLineup, idealLineup, clearPlayerFromLineup } = useLineupStore();
+  const { teamA, teamB, getEligiblePlayersForSlot, setPlayerInLineup, idealLineup, clearPlayerFromLineup, isComparisonMode } = useLineupStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlayerForSlot, setSelectedPlayerForSlot] = useState<Player | null>(null);
   const [sortCriteria, setSortCriteria] = useState<SortCriteria>('Partidos');
@@ -66,12 +65,14 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
     }
   };
 
+  const isSubstituteSlot = positionSlotKey?.startsWith('SUB_');
+  const isCoachSlot = positionSlotKey === 'COACH_SLOT';
   const currentFormation = useLineupStore(state => state.formations.find(f => f.key === state.selectedFormationKey));
-  const currentPositionSlot = currentFormation?.positions.find(p => p.key === positionSlotKey);
+  const currentPositionSlot = !isSubstituteSlot && !isCoachSlot ? currentFormation?.positions.find(p => p.key === positionSlotKey) : null;
 
   const sortPlayers = useCallback((players: Player[], criteria: SortCriteria): Player[] => {
-    if (!Array.isArray(players)) {
-      return [];
+    if (!Array.isArray(players) || isCoachSlot) {
+      return players || [];
     }
     return [...players].sort((a, b) => {
       const statA = a.stats?.[criteria] ?? (criteria === 'Sofascore' ? 0 : -Infinity); 
@@ -79,22 +80,23 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
       
       return (statB as number) - (statA as number);
     });
-  }, []);
+  }, [isCoachSlot]);
 
-  const getProcessedPlayers = useCallback((allTeamPlayers: Player[], eligibleSlotPlayers: Player[]): Player[] => {
+  const getProcessedPlayers = useCallback((allTeamPlayers: Player[] | undefined, eligibleSlotPlayers: Player[]): Player[] => {
     let playersToDisplay: Player[];
     if (!Array.isArray(allTeamPlayers)) allTeamPlayers = [];
     if (!Array.isArray(eligibleSlotPlayers)) eligibleSlotPlayers = [];
     
     if (searchTerm.trim() !== '') {
-      playersToDisplay = allTeamPlayers.filter(player =>
+      const allPlayers = isCoachSlot ? eligibleSlotPlayers : allTeamPlayers;
+      playersToDisplay = allPlayers.filter(player =>
         player.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     } else {
       playersToDisplay = eligibleSlotPlayers;
     }
     return sortPlayers(playersToDisplay, sortCriteria);
-  }, [searchTerm, sortPlayers, sortCriteria]);
+  }, [searchTerm, sortPlayers, sortCriteria, isCoachSlot]);
 
   const { teamAPlayers: eligibleTeamAPlayers, teamBPlayers: eligibleTeamBPlayers } = useMemo(() => {
     if (!positionSlotKey) return { teamAPlayers: [], teamBPlayers: [] };
@@ -103,15 +105,17 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
 
 
   const displayedTeamAPlayers = useMemo(() => {
-    return getProcessedPlayers(teamA.players, eligibleTeamAPlayers);
-  }, [teamA.players, eligibleTeamAPlayers, getProcessedPlayers, sortCriteria]);
+    return getProcessedPlayers(teamA?.players, eligibleTeamAPlayers);
+  }, [teamA?.players, eligibleTeamAPlayers, getProcessedPlayers]);
 
   const displayedTeamBPlayers = useMemo(() => {
-    return getProcessedPlayers(teamB.players, eligibleTeamBPlayers);
-  }, [teamB.players, eligibleTeamBPlayers, getProcessedPlayers, sortCriteria]);
+    return getProcessedPlayers(teamB?.players, eligibleTeamBPlayers);
+  }, [teamB?.players, eligibleTeamBPlayers, getProcessedPlayers]);
 
 
-  if (!isOpen || !positionSlotKey || !currentPositionSlot) return null;
+  if (!isOpen || !positionSlotKey || !teamA) return null;
+  if (!isSubstituteSlot && !isCoachSlot && !currentPositionSlot) return null;
+
 
   const noPlayersTeamA = displayedTeamAPlayers.length === 0;
   const noPlayersTeamB = displayedTeamBPlayers.length === 0;
@@ -121,9 +125,8 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
     : (eligibleTeamAPlayers.length > 0 ? "teamA" : (eligibleTeamBPlayers.length > 0 ? "teamB" : "teamA"));
 
 
-  const renderPlayerList = (players: Player[]) => {
+  const renderPlayerList = (players: Player[], teamName: string) => {
     if (players.length === 0) {
-       const teamName = players === displayedTeamAPlayers ? teamA.name : teamB.name;
        return (
          <p className="text-center text-muted-foreground py-4">
            {searchTerm ? `No se encontraron jugadores de ${teamName} con "${searchTerm}".` : `No hay jugadores elegibles de ${teamName} para esta posición y criterio.`}
@@ -153,25 +156,26 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
     );
   };
 
-  let displayPositionType = currentPositionSlot.type;
-  if (currentPositionSlot.label === 'MD' && currentPositionSlot.type === 'Mediocampista') {
-    displayPositionType = 'Mediocampista Derecho';
-  } else if (currentPositionSlot.label === 'MI' && currentPositionSlot.type === 'Mediocampista') {
-    displayPositionType = 'Mediocampista Izquierdo';
-  } else if (currentPositionSlot.label === 'LI' && currentPositionSlot.type === 'Defensa') {
-    displayPositionType = 'Lateral Izquierdo';
-  } else if (currentPositionSlot.label === 'LD' && currentPositionSlot.type === 'Defensa') {
-    displayPositionType = 'Lateral Derecho';
-  } else if (currentPositionSlot.label === 'CAD' && currentPositionSlot.type === 'Mediocampista') {
-    displayPositionType = 'Carrilero';
-  } else if (currentPositionSlot.label === 'CAI' && currentPositionSlot.type === 'Mediocampista') {
-    displayPositionType = 'Carrilero';
-  } else if (currentPositionSlot.label === 'MCD' && currentPositionSlot.type === 'Mediocampista') {
-    displayPositionType = 'Mediocampista Defensivo';
-  } else if (currentPositionSlot.label === 'ED' && currentPositionSlot.type === 'Delantero') {
-    displayPositionType = 'Extremo Derecho';
-  } else if (currentPositionSlot.label === 'EI' && currentPositionSlot.type === 'Delantero') {
-    displayPositionType = 'Extremo Izquierdo';
+  let modalTitle;
+  if (isCoachSlot) {
+      modalTitle = 'Seleccionar Director Técnico';
+  } else if (isSubstituteSlot) {
+    modalTitle = 'Seleccionar Suplente';
+  } else if (currentPositionSlot) {
+      let displayPositionType = currentPositionSlot.type;
+      if (currentPositionSlot.label === 'MD' && currentPositionSlot.type === 'Mediocampista') displayPositionType = 'Mediocampista Derecho';
+      else if (currentPositionSlot.label === 'MI' && currentPositionSlot.type === 'Mediocampista') displayPositionType = 'Mediocampista Izquierdo';
+      else if (currentPositionSlot.label === 'LI' && currentPositionSlot.type === 'Defensa') displayPositionType = 'Lateral Izquierdo';
+      else if (currentPositionSlot.label === 'LD' && currentPositionSlot.type === 'Defensa') displayPositionType = 'Lateral Derecho';
+      else if (currentPositionSlot.label === 'CAD' && currentPositionSlot.type === 'Mediocampista') displayPositionType = 'Carrilero';
+      else if (currentPositionSlot.label === 'CAI' && currentPositionSlot.type === 'Mediocampista') displayPositionType = 'Carrilero';
+      else if (currentPositionSlot.label === 'MCD' && currentPositionSlot.type === 'Mediocampista') displayPositionType = 'Mediocampista Defensivo';
+      else if (currentPositionSlot.label === 'ED' && currentPositionSlot.type === 'Delantero') displayPositionType = 'Extremo Derecho';
+      else if (currentPositionSlot.label === 'EI' && currentPositionSlot.type === 'Delantero') displayPositionType = 'Extremo Izquierdo';
+      
+      modalTitle = `Seleccionar Jugador para ${currentPositionSlot.label} (${displayPositionType})`;
+  } else {
+    modalTitle = 'Seleccionar Jugador';
   }
 
 
@@ -180,7 +184,7 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
       <DialogContent className="sm:max-w-[600px] bg-card p-4">
         <DialogHeader>
           <DialogTitle className="font-headline text-primary pr-8">
-            Comparar Jugadores para {currentPositionSlot.label} ({displayPositionType})
+            {modalTitle}
           </DialogTitle>
         </DialogHeader>
 
@@ -190,57 +194,65 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
             <Input
               id="search-player"
               type="search"
-              placeholder="Buscar jugador por nombre..."
+              placeholder="Buscar por nombre..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full"
             />
           </div>
-          <div className="flex-shrink-0">
-            <Label htmlFor="sort-criteria" className="block text-xs text-muted-foreground mb-1">Ordenar por:</Label>
-            <Select value={sortCriteria} onValueChange={(value) => setSortCriteria(value as SortCriteria)}>
-              <SelectTrigger id="sort-criteria" className="w-full md:w-[180px]">
-                <SelectValue placeholder="Ordenar por" />
-              </SelectTrigger>
-              <SelectContent>
-                {sortOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isCoachSlot && (
+            <div className="flex-shrink-0">
+              <Label htmlFor="sort-criteria" className="block text-xs text-muted-foreground mb-1">Ordenar por:</Label>
+              <Select value={sortCriteria} onValueChange={(value) => setSortCriteria(value as SortCriteria)}>
+                <SelectTrigger id="sort-criteria" className="w-full md:w-[180px]">
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
-        <Tabs defaultValue={initialTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 !bg-border">
-            <TabsTrigger
-              value="teamA"
-              disabled={noPlayersTeamA && searchTerm.trim() === '' && eligibleTeamAPlayers.length === 0}
-              className="data-[state=active]:!bg-card data-[state=active]:!text-primary data-[state=inactive]:hover:text-primary"
-            >
-              {teamA.name}
-            </TabsTrigger>
-            <TabsTrigger
-              value="teamB"
-              disabled={noPlayersTeamB && searchTerm.trim() === '' && eligibleTeamBPlayers.length === 0}
-              className="data-[state=active]:!bg-card data-[state=active]:!text-primary data-[state=inactive]:hover:text-primary"
-            >
-              {teamB.name}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="teamA">
-            <ScrollArea className="h-[230px] pt-1 px-0 pb-0">
-              {renderPlayerList(displayedTeamAPlayers)}
+        {isComparisonMode && teamB ? (
+            <Tabs defaultValue={initialTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 !bg-border">
+                <TabsTrigger
+                  value="teamA"
+                  disabled={noPlayersTeamA && searchTerm.trim() === '' && eligibleTeamAPlayers.length === 0}
+                  className="data-[state=active]:!bg-card data-[state=active]:!text-primary data-[state=inactive]:hover:text-primary"
+                >
+                  {teamA.name}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="teamB"
+                  disabled={noPlayersTeamB && searchTerm.trim() === '' && eligibleTeamBPlayers.length === 0}
+                  className="data-[state=active]:!bg-card data-[state=active]:!text-primary data-[state=inactive]:hover:text-primary"
+                >
+                  {teamB.name}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="teamA">
+                <ScrollArea className="h-[230px] pt-1 px-0 pb-0">
+                  {renderPlayerList(displayedTeamAPlayers, teamA.name)}
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value="teamB">
+                <ScrollArea className="h-[230px] pt-1 px-0 pb-0">
+                  {renderPlayerList(displayedTeamBPlayers, teamB.name)}
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+        ) : (
+            <ScrollArea className="h-[300px] pt-1 px-0 pb-0">
+              {renderPlayerList(displayedTeamAPlayers, teamA.name)}
             </ScrollArea>
-          </TabsContent>
-          <TabsContent value="teamB">
-            <ScrollArea className="h-[230px] pt-1 px-0 pb-0">
-              {renderPlayerList(displayedTeamBPlayers)}
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
+        )}
 
         <DialogFooter className="mt-3">
           {selectedPlayerForSlot && (
@@ -255,4 +267,3 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
     </Dialog>
   );
 }
-

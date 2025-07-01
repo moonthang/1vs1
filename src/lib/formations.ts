@@ -46,7 +46,7 @@ export const formations: Formation[] = [
       { key: 'LCB', label: 'DFC', type: 'Defensa', coordinates: { top: '75%', left: '35%' } },
       { key: 'LB', label: 'LI', type: 'Defensa', coordinates: { top: '72%', left: '12%' } },
       { key: 'RCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '50%', left: '70%' } },
-      { key: 'CAM', label: 'MCO', type: 'Mediocampista Ofensivo', coordinates: { top: '35%', left: '50%' } },
+      { key: 'CAM', label: 'MCO', type: 'Mediocampista', coordinates: { top: '35%', left: '50%' } },
       { key: 'LCM', label: 'MC', type: 'Mediocampista', coordinates: { top: '50%', left: '30%' } },
       { key: 'RW', label: 'ED', type: 'Delantero', coordinates: { top: '20%', left: '85%' } },
       { key: 'ST', label: 'DEL', type: 'Delantero', coordinates: { top: '15%', left: '50%' } },

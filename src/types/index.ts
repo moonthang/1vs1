@@ -1,9 +1,11 @@
 
+
 export interface Player {
   id: string;
   name: string;
   jerseyNumber: number;
   position: string;
+  nationality?: string;
   stats: {
     pace?: number;
     shooting?: number;
@@ -19,19 +21,41 @@ export interface Player {
     'Goles recibidos'?: number;
   };
   imageUrl: string; 
-  teamId: 'teamA' | 'teamB';
+  imageFileId?: string;
+  teamId: string;
+}
+
+export interface Coach {
+  name: string;
+  imageUrl?: string;
+  imageFileId?: string;
+  nationality?: string;
 }
 
 export interface Team {
-  id: 'teamA' | 'teamB';
+  id: string;
   name: string;
+  coach?: Coach;
   players: Player[];
+  logoUrl?: string;
+  logoFileId?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+}
+
+export interface TeamInfo {
+  id: string;
+  name: string;
+  logoUrl: string;
+  logoFileId?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
 export interface PositionSlot {
   key: string;
   label: string;
-  type: "Portero" | "Defensa" | "Mediocampista" | "Mediocampista Ofensivo" | "Delantero";
+  type: "Portero" | "Defensa" | "Mediocampista" | "Delantero";
   coordinates: { top: string; left: string };
 }
 

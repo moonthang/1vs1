@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Player, PositionSlot as PositionSlotType } from '@/types';
@@ -6,48 +5,66 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useLineupStore } from '@/store/lineupStore';
 import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import { IMAGEKIT_URL_ENDPOINT } from '@/lib/imagekit';
 
 interface PlayerSlotProps {
-  positionSlot: PositionSlotType;
-  selectedPlayer: Player | null;
-  onSlotClick: (positionSlotKey: string) => void;
+    positionSlot: PositionSlotType;
+    selectedPlayer: Player | null;
+    onSlotClick: (key: string) => void;
+    size?: 'default' | 'small';
 }
 
-const IMAGEKIT_URL_ENDPOINT = (process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "").trim();
-
-export function PlayerSlot({ positionSlot, selectedPlayer, onSlotClick }: PlayerSlotProps) {
+export function PlayerSlot({ positionSlot, selectedPlayer, onSlotClick, size = 'default' }: PlayerSlotProps) {
   const { key, label, coordinates } = positionSlot;
-  const { teamB } = useLineupStore((state) => ({ teamB: state.teamB }));
+  const { teamA, teamB } = useLineupStore((state) => ({ teamA: state.teamA, teamB: state.teamB }));
 
-  const isTeamB = selectedPlayer && selectedPlayer.teamId === teamB.id;
-
-  const getDefaultSlotImageUrl = () => `https://placehold.co/64x64.png?text=${selectedPlayer ? selectedPlayer.name.charAt(0) : label.charAt(0) || 'P'}`;
-
-  const getInitialImageUrl = () => {
-    if (selectedPlayer && IMAGEKIT_URL_ENDPOINT && selectedPlayer.imageUrl) {
-      return `${IMAGEKIT_URL_ENDPOINT}/${selectedPlayer.teamId}/${selectedPlayer.imageUrl}`;
+  const teamAColor = teamA?.primaryColor || '#1A237E';
+  const teamBColor = (() => {
+    if (!teamB) return '#E53935';
+    if (teamB.primaryColor && teamA?.primaryColor !== teamB.primaryColor) {
+      return teamB.primaryColor;
     }
-    return getDefaultSlotImageUrl();
+    return teamB.secondaryColor || '#E53935';
+  })();
+
+  const isTeamB = selectedPlayer && teamB && selectedPlayer.teamId === teamB.id;
+  const playerColor = isTeamB ? teamBColor : teamAColor;
+
+  const getImageUrl = () => {
+    const placeholder = `https://placehold.co/64x64.png?text=${label.charAt(0) || 'P'}`;
+    if (!selectedPlayer) return placeholder;
+    
+    const imageUrl = selectedPlayer.imageUrl;
+    if (!imageUrl || imageUrl.startsWith('data:')) {
+      return placeholder;
+    }
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+
+    const path = `/${selectedPlayer.teamId}/${imageUrl}`;
+    return `${IMAGEKIT_URL_ENDPOINT}${path}`;
   };
 
-  const [currentImageUrl, setCurrentImageUrl] = useState(getInitialImageUrl());
+  const calculatedImageUrl = getImageUrl();
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    setCurrentImageUrl(getInitialImageUrl());
-  }, [selectedPlayer?.imageUrl, selectedPlayer?.teamId, selectedPlayer?.name, label]);
+    setHasError(false);
+  }, [calculatedImageUrl]);
 
-  const handleImageError = () => {
-    setCurrentImageUrl(`https://placehold.co/64x64.png?text=Err`);
-  };
-
-  const isActualImageKitImage = !!(selectedPlayer && IMAGEKIT_URL_ENDPOINT && selectedPlayer.imageUrl && !currentImageUrl.startsWith('https://placehold.co'));
-  const isPlaceholderImage = currentImageUrl.startsWith('https://placehold.co');
-  const shouldBeUnoptimized = isActualImageKitImage || isPlaceholderImage;
+  const finalSrc = hasError 
+    ? `https://placehold.co/64x64.png?text=Err` 
+    : calculatedImageUrl;
 
   return (
     <div
-      className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110 w-16 sm:w-24"
-      style={{ top: coordinates.top, left: coordinates.left }}
+      className={cn(
+        "flex flex-col items-center transition-all duration-300 ease-in-out transform hover:scale-110",
+        size === 'default' ? 'absolute -translate-x-1/2 -translate-y-1/2 w-16 sm:w-24' : 'relative w-14'
+      )}
+      style={size === 'default' ? { top: coordinates.top, left: coordinates.left } : {}}
       onClick={() => onSlotClick(key)}
       role="button"
       tabIndex={0}
@@ -57,28 +74,43 @@ export function PlayerSlot({ positionSlot, selectedPlayer, onSlotClick }: Player
       {selectedPlayer ? (
         <div className="flex flex-col items-center text-center">
           <Image
-            src={currentImageUrl}
+            key={finalSrc}
+            src={finalSrc}
             alt={selectedPlayer.name}
             width={72} 
             height={72}
-            className={`rounded-full border-2 ${isTeamB ? 'border-destructive' : 'border-primary'} object-cover shadow-md w-12 h-12 sm:w-16 sm:h-16`}
-            onError={handleImageError}
-            unoptimized={shouldBeUnoptimized}
+            className={cn(
+              `rounded-full border-2 object-cover shadow-md`,
+              size === 'default' ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-10 h-10 sm:w-12 sm:h-12'
+            )}
+            style={{ borderColor: playerColor }}
+            onError={() => setHasError(true)}
           />
-          <span className={`mt-1 text-[10px] leading-tight sm:text-xs font-semibold text-primary-foreground ${isTeamB ? 'bg-destructive' : 'bg-primary'} px-1 py-0 sm:px-2 sm:py-0.5 rounded-full shadow`}>
+          <span
+            className={cn(
+              `mt-1 text-[10px] leading-tight font-semibold text-primary-foreground px-1 py-0 sm:px-2 sm:py-0.5 rounded-full shadow w-full truncate`,
+              size === 'small' && 'sm:px-1 text-[9px]'
+            )}
+            style={{ backgroundColor: playerColor }}
+          >
             {selectedPlayer.name.split(' ').pop()}
           </span>
         </div>
       ) : (
         <Button
           variant="outline"
-          className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-accent/30 border-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground flex items-center justify-center shadow-md p-0"
+          className={cn(
+            "rounded-full bg-accent/30 border-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground flex items-center justify-center shadow-md p-0",
+            size === 'default' ? 'w-12 h-12 sm:w-16 sm:h-16' : 'w-10 h-10 sm:w-12 sm:h-12'
+          )}
           aria-label={`Añadir jugador a ${label}`}
         >
-          <span className="text-sm font-bold sm:text-base">{label}</span>
+          <span className={cn(
+            "font-bold",
+            size === 'default' ? 'text-sm sm:text-base' : 'text-xs'
+          )}>{label}</span>
         </Button>
       )}
     </div>
   );
 }
-
