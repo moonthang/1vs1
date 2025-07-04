@@ -11,6 +11,7 @@ import type { TeamInfo } from '@/types';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 
 function TeamSelectionCard({
   team,
@@ -92,7 +93,7 @@ export default function ComparePage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 md:p-8">
       <header className="mb-8 flex w-full max-w-4xl items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
+        <Button variant="ghost" size="icon" onClick={() => router.push('/')} className="text-primary hover:bg-transparent hover:text-primary">
             <ArrowLeft />
         </Button>
         <div className="text-center">
@@ -141,6 +142,7 @@ export default function ComparePage() {
       <footer className="mt-12 text-center text-sm text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} 1vs1 FutDraft.</p>
       </footer>
+      <ScrollToTopButton />
     </div>
   );
 }

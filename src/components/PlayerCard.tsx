@@ -4,11 +4,14 @@
 import type { Player } from '@/types';
 import Image from 'next/image';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Target, ShieldCheck, Zap, ArrowRightLeft, Dumbbell, ListChecks, Goal, Handshake, Star, RefreshCw, Cake, Euro } from 'lucide-react';
+import { User, Target, ShieldCheck, Zap, ArrowRightLeft, Dumbbell, ListChecks, Goal, Handshake, Star, RefreshCw, Cake, Euro, Edit, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { IMAGEKIT_URL_ENDPOINT } from '@/lib/imagekit';
 import { Badge } from '@/components/ui/badge';
 import { countryMap } from '@/data/countries';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface PlayerCardProps {
   player: Player;
@@ -16,6 +19,9 @@ interface PlayerCardProps {
   isSelected?: boolean;
   showStats?: boolean;
   isUnavailable?: boolean;
+  onEdit?: () => void;
+  onMove?: () => void;
+  onDelete?: () => void;
 }
 
 function calculateAge(birthDateString?: string): number | null {
@@ -68,7 +74,7 @@ const formatValue = (value: number): string => {
   return value.toLocaleString('de-DE');
 };
 
-export function PlayerCard({ player, onSelect, isSelected, showStats = false, isUnavailable = false }: PlayerCardProps) {
+export function PlayerCard({ player, onSelect, isSelected, showStats = false, isUnavailable = false, onEdit, onMove, onDelete }: PlayerCardProps) {
   
   const getImageUrl = () => {
     let imageUrl = player.imageUrl || '';
@@ -100,10 +106,11 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
   
   return (
     <Card
-      className={`relative transition-all duration-200 ease-in-out hover:shadow-lg
-        ${isSelected ? 'ring-2 ring-accent' : ''}
-        ${isUnavailable ? 'opacity-60 bg-muted cursor-not-allowed' : (onSelect ? 'cursor-pointer' : '')}
-      `}
+      className={cn(
+        `transition-all duration-200 ease-in-out hover:shadow-lg flex flex-col`,
+        isSelected ? 'ring-2 ring-accent' : '',
+        isUnavailable ? 'opacity-60 bg-muted cursor-not-allowed' : (onSelect ? 'cursor-pointer' : '')
+      )}
       onClick={isUnavailable || !onSelect ? undefined : () => onSelect(player)}
       aria-selected={isSelected}
       aria-disabled={isUnavailable}
@@ -111,18 +118,18 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
       onKeyDown={isUnavailable || !onSelect ? undefined : (e) => (e.key === 'Enter' || e.key === ' ') && onSelect(player)}
     >
       {showStats ? (
-        <div className="grid grid-cols-10 gap-x-2 p-2 items-start">
-          <div className="col-span-3 flex-shrink-0 relative">
+        <div className="grid grid-cols-10 gap-x-2 p-2 items-start h-full">
+          <div className="col-span-3 flex-shrink-0 relative h-full">
             <Image
               key={finalSrc}
               src={finalSrc}
               alt={player.name}
               width={120} 
               height={120}
-              className="rounded-md object-cover aspect-[3/4] border border-muted"
+              className="rounded-md object-cover w-full h-full border border-muted"
               onError={() => setHasError(true)}
             />
-             {player.needsPhotoUpdate && (
+            {player.needsPhotoUpdate && (
                 <div className="absolute bottom-1 right-1 left-1 z-10">
                     <Badge variant="destructive" className="w-full justify-center text-[10px] px-1 py-0.5 animate-pulse leading-tight">
                         <RefreshCw className="w-2.5 h-2.5 mr-1" />
@@ -131,7 +138,6 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
                 </div>
             )}
           </div>
-
           <div className="col-span-3 flex flex-col justify-start">
             <CardTitle className="text-sm font-headline leading-tight mb-1">{player.name}</CardTitle>
             <p className="text-xs text-muted-foreground">
@@ -156,36 +162,75 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
               </div>
             )}
           </div>
+          <div className="col-span-4 flex flex-col h-full">
+            <div className="space-y-0.5 text-xs flex-grow">
+              {preferredStatsOrder.map((statName) => {
+                const isGoalkeeper = player.position === 'Portero';
+                const goalkeeperStats: (keyof Player['stats'])[] = ['Arcos en cero', 'Goles recibidos'];
 
-          {showStats && (
-            <div className="col-span-4">
-              <div className="space-y-0.5 text-xs">
-                {preferredStatsOrder.map((statName) => {
-                  const isGoalkeeper = player.position === 'Portero';
-                  const goalkeeperStats: (keyof Player['stats'])[] = ['Arcos en cero', 'Goles recibidos'];
+                if (!isGoalkeeper && goalkeeperStats.includes(statName)) {
+                  return null;
+                }
 
-                  if (!isGoalkeeper && goalkeeperStats.includes(statName)) {
-                    return null;
-                  }
-
-                  const statValue = player.stats?.[statName];
-                  
-                  return (
-                    <div key={statName} className="flex items-center">
-                      <StatIcon statName={statName as string} />
-                      <span className="capitalize truncate">{statName}:</span>
-                      <span className="ml-auto font-semibold">
-                        {statValue ?? '--'}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+                const statValue = player.stats?.[statName];
+                
+                return (
+                  <div key={statName} className="flex items-center">
+                    <StatIcon statName={statName as string} />
+                    <span className="capitalize truncate">{statName}:</span>
+                    <span className="ml-auto font-semibold">
+                      {statValue ?? '--'}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-          )}
+            {isSelected && (onEdit || onMove || onDelete) && (
+              <div className="mt-auto pt-2 flex justify-end gap-1">
+                  <TooltipProvider>
+                      {onEdit && (
+                          <Tooltip>
+                              <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                                      <Edit className="h-4 w-4" />
+                                  </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                  <p>Editar Jugador</p>
+                              </TooltipContent>
+                          </Tooltip>
+                      )}
+                      {onMove && (
+                          <Tooltip>
+                              <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onMove(); }}>
+                                      <ArrowRightLeft className="h-4 w-4" />
+                                  </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                  <p>Mover Jugador</p>
+                              </TooltipContent>
+                          </Tooltip>
+                      )}
+                      {onDelete && (
+                          <Tooltip>
+                              <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                                      <Trash2 className="h-4 w-4" />
+                                  </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                  <p>Eliminar Jugador</p>
+                              </TooltipContent>
+                          </Tooltip>
+                      )}
+                  </TooltipProvider>
+              </div>
+            )}
+          </div>
         </div>
       ) : (
-        <CardHeader className="p-4">
+        <CardHeader className="p-4 flex-grow">
           <div className="flex items-center space-x-3">
             <Image
               key={finalSrc}

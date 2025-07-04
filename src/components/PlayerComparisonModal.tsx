@@ -35,7 +35,7 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
   const { teamA, teamB, getEligiblePlayersForSlot, setPlayerInLineup, idealLineup, clearPlayerFromLineup, isComparisonMode } = useLineupStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlayerForSlot, setSelectedPlayerForSlot] = useState<Player | null>(null);
-  const [sortCriteria, setSortCriteria] = useState<SortCriteria>('Partidos');
+  const [sortCriteria, setSortCriteria] = useState<SortCriteria>('Valor');
 
   useEffect(() => {
     if (isOpen && positionSlotKey) {
@@ -43,7 +43,7 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
     }
     if (!isOpen) {
       setSearchTerm('');
-      setSortCriteria('Partidos'); 
+      setSortCriteria('Valor'); 
     }
   }, [isOpen, positionSlotKey, idealLineup]);
 
@@ -203,7 +203,7 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col md:flex-row gap-2 my-3 items-stretch md:items-end">
+        <div className="flex flex-row gap-2 my-3 items-center">
           <div className="flex-grow">
             <Label htmlFor="search-player" className="sr-only">Buscar Jugador</Label>
             <Input
@@ -217,9 +217,9 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
           </div>
           {!isCoachSlot && (
             <div className="flex-shrink-0">
-              <Label htmlFor="sort-criteria" className="block text-xs text-muted-foreground mb-1">Ordenar por:</Label>
+              <Label htmlFor="sort-criteria" className="sr-only">Ordenar por:</Label>
               <Select value={sortCriteria} onValueChange={(value) => setSortCriteria(value as SortCriteria)}>
-                <SelectTrigger id="sort-criteria" className="w-full md:w-[180px]">
+                <SelectTrigger id="sort-criteria" className="w-[180px]">
                   <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
                 <SelectContent>
@@ -269,13 +269,15 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
             </ScrollArea>
         )}
 
-        <DialogFooter className="mt-3">
-          {selectedPlayerForSlot && (
-            <Button variant="destructive" onClick={handleRemovePlayer} className="mr-auto">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Quitar a {selectedPlayerForSlot.name}
-            </Button>
-          )}
+        <DialogFooter className="mt-3 flex-row justify-between">
+          <div>
+            {selectedPlayerForSlot && (
+              <Button variant="destructive" onClick={handleRemovePlayer}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Quitar a {selectedPlayerForSlot.name}
+              </Button>
+            )}
+          </div>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
         </DialogFooter>
       </DialogContent>

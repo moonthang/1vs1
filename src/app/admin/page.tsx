@@ -43,6 +43,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { uploadImage, deleteImage } from '@/actions/uploadActions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 
 const EditTeamDialog = ({
   team,
@@ -779,6 +780,7 @@ export default function AdminPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <ScrollToTopButton />
         </div>
     );
 }

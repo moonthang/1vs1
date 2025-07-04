@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Player, PositionSlot as PositionSlotType } from '@/types';
@@ -5,7 +6,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useLineupStore } from '@/store/lineupStore';
 import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, getContrastingTextColor } from '@/lib/utils';
 import { IMAGEKIT_URL_ENDPOINT } from '@/lib/imagekit';
 
 interface PlayerSlotProps {
@@ -88,10 +89,13 @@ export function PlayerSlot({ positionSlot, selectedPlayer, onSlotClick, size = '
           />
           <span
             className={cn(
-              `mt-1 text-[10px] leading-tight font-semibold text-primary-foreground px-1 py-0 sm:px-2 sm:py-0.5 rounded-full shadow w-full truncate`,
+              `mt-1 text-[10px] leading-tight font-semibold px-1 py-0 sm:px-2 sm:py-0.5 rounded-full shadow`,
               size === 'small' && 'sm:px-1 text-[9px]'
             )}
-            style={{ backgroundColor: playerColor }}
+            style={{ 
+              backgroundColor: playerColor,
+              color: getContrastingTextColor(playerColor) 
+            }}
           >
             {selectedPlayer.name.split(' ').pop()}
           </span>

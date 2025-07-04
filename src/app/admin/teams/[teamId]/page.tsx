@@ -48,6 +48,7 @@ import { IMAGEKIT_URL_ENDPOINT } from '@/lib/imagekit';
 import logo1vs1 from '@/assets/logo/1vs1.png';
 import { NationalitySelector } from '@/components/NationalitySelector';
 import { countryMap } from '@/data/countries';
+import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 
 const parsePlayerValue = (value: string | undefined): number | undefined => {
     if (!value || value.trim() === '') return undefined;
@@ -1082,46 +1083,6 @@ export default function TeamViewPage() {
                                             <PlusCircle className="mr-2 h-4 w-4" />
                                             Agregar
                                         </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => selectedPlayer && setEditPlayerModalOpen(true)}
-                                            disabled={!selectedPlayer}
-                                        >
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            Editar
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => selectedPlayer && setMovePlayerModalOpen(true)}
-                                            disabled={!selectedPlayer}
-                                        >
-                                            <ArrowRightLeft className="mr-2 h-4 w-4" />
-                                            Mover
-                                        </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                 <Button variant="destructive" size="sm" disabled={!selectedPlayer} onClick={() => setPlayerToDelete(selectedPlayer)}>
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Eliminar
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Esta acción eliminará a {selectedPlayer?.name} permanentemente del equipo y su imagen de ImageKit.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel onClick={() => setPlayerToDelete(null)}>Cancelar</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={handleDeletePlayer}>
-                                                        Confirmar
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
                                     </div>
                                 </div>
                             </CardHeader>
@@ -1134,6 +1095,9 @@ export default function TeamViewPage() {
                                           showStats={true}
                                           onSelect={handlePlayerClick}
                                           isSelected={selectedPlayer?.id === player.id}
+                                          onEdit={() => setEditPlayerModalOpen(true)}
+                                          onMove={() => setMovePlayerModalOpen(true)}
+                                          onDelete={() => setPlayerToDelete(player)}
                                         />
                                     ))}
                                 </div>
@@ -1179,6 +1143,23 @@ export default function TeamViewPage() {
                     onMove={handleMovePlayer}
                 />
             )}
+            <AlertDialog open={!!playerToDelete} onOpenChange={(isOpen) => !isOpen && setPlayerToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción eliminará a {playerToDelete?.name} permanentemente del equipo y su imagen de ImageKit.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeletePlayer}>
+                            Confirmar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <ScrollToTopButton />
         </div>
     );
 }
