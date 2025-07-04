@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Player } from '@/types';
@@ -19,9 +20,10 @@ interface PlayerComparisonModalProps {
   positionSlotKey: string | null;
 }
 
-type SortCriteria = 'Partidos' | 'Sofascore' | 'Goles' | 'Asistencia' | 'Arcos en cero';
+type SortCriteria = 'Partidos' | 'Sofascore' | 'Goles' | 'Asistencia' | 'Arcos en cero' | 'Valor';
 
 const sortOptions: { value: SortCriteria; label: string }[] = [
+  { value: 'Valor', label: 'Valor de Mercado' },
   { value: 'Partidos', label: 'Partidos Jugados' },
   { value: 'Sofascore', label: 'Sofascore Rating' },
   { value: 'Goles', label: 'Goles' },
@@ -75,7 +77,13 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
       return players || [];
     }
     return [...players].sort((a, b) => {
-      const statA = a.stats?.[criteria] ?? (criteria === 'Sofascore' ? 0 : -Infinity); 
+      if (criteria === 'Valor') {
+        const valueA = a.value ?? -Infinity;
+        const valueB = b.value ?? -Infinity;
+        return valueB - valueA;
+      }
+
+      const statA = a.stats?.[criteria] ?? (criteria === 'Sofascore' ? 0 : -Infinity);
       const statB = b.stats?.[criteria] ?? (criteria === 'Sofascore' ? 0 : -Infinity);
       
       return (statB as number) - (statA as number);
@@ -129,7 +137,7 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
     if (players.length === 0) {
        return (
          <p className="text-center text-muted-foreground py-4">
-           {searchTerm ? `No se encontraron jugadores de ${teamName} con "${searchTerm}".` : `No hay jugadores elegibles de ${teamName} para esta posición y criterio.`}
+           {searchTerm ? `No se encontraron jugadores de ${teamName} con "${searchTerm}".` : `No hay jugadores para mostrar.`}
          </p>
        );
     }
@@ -181,7 +189,14 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] bg-card p-4">
+      <DialogContent 
+        className="sm:max-w-[600px] bg-card p-4"
+        onOpenAutoFocus={(e) => {
+          if ('ontouchstart' in window) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="font-headline text-primary pr-8">
             {modalTitle}

@@ -4,7 +4,7 @@
 import type { Player } from '@/types';
 import Image from 'next/image';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Target, ShieldCheck, Zap, ArrowRightLeft, Dumbbell, ListChecks, Goal, Handshake, Star, RefreshCw } from 'lucide-react';
+import { User, Target, ShieldCheck, Zap, ArrowRightLeft, Dumbbell, ListChecks, Goal, Handshake, Star, RefreshCw, Cake, Euro } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { IMAGEKIT_URL_ENDPOINT } from '@/lib/imagekit';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,25 @@ interface PlayerCardProps {
   isSelected?: boolean;
   showStats?: boolean;
   isUnavailable?: boolean;
+}
+
+function calculateAge(birthDateString?: string): number | null {
+  if (!birthDateString || !/^\d{2}\/\d{2}\/\d{4}$/.test(birthDateString)) {
+    return null;
+  }
+  const parts = birthDateString.split('/');
+  const day = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const year = parseInt(parts[2], 10);
+  const birthDate = new Date(year, month, day);
+  const today = new Date();
+  if (isNaN(birthDate.getTime())) return null;
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
 }
 
 const StatIcon = ({ statName }: { statName: string }) => {
@@ -38,6 +57,16 @@ const StatIcon = ({ statName }: { statName: string }) => {
 };
 
 const preferredStatsOrder: (keyof Player['stats'])[] = ['Partidos', 'Goles', 'Asistencia', 'Arcos en cero', 'Goles recibidos', 'Sofascore'];
+
+const formatValue = (value: number): string => {
+  if (value >= 1000000) {
+    return `${(value / 1000000).toString().replace('.', ',')} mill.`;
+  }
+  if (value >= 1000) {
+    return `${Math.round(value / 1000)} mil`;
+  }
+  return value.toLocaleString('de-DE');
+};
 
 export function PlayerCard({ player, onSelect, isSelected, showStats = false, isUnavailable = false }: PlayerCardProps) {
   
@@ -67,6 +96,7 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
     : calculatedImageUrl;
     
   const country = player.nationality ? countryMap.get(player.nationality) : null;
+  const age = calculateAge(player.birthDate);
   
   return (
     <Card
@@ -112,6 +142,18 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
                     <Image src={country.flag} alt={country.label} width={16} height={12} className="border border-muted" />
                     <span>{country.label}</span>
                 </div>
+            )}
+            {age !== null && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                  <Cake className="w-3.5 h-3.5" />
+                  <span>{age} años</span>
+              </div>
+            )}
+            {player.value != null && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                  <Euro className="w-3.5 h-3.5" />
+                  <span>{formatValue(player.value)}</span>
+              </div>
             )}
           </div>
 

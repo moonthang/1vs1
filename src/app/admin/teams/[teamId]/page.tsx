@@ -49,6 +49,30 @@ import logo1vs1 from '@/assets/logo/1vs1.png';
 import { NationalitySelector } from '@/components/NationalitySelector';
 import { countryMap } from '@/data/countries';
 
+const parsePlayerValue = (value: string | undefined): number | undefined => {
+    if (!value || value.trim() === '') return undefined;
+    
+    const valueStr = value.trim().replace(',', '.');
+    const num = parseFloat(valueStr);
+    if (isNaN(num)) return undefined;
+
+    if (valueStr.includes('.')) {
+        return Math.round(num * 1000000);
+    }
+    return Math.round(num * 1000);
+};
+
+const formatValueForInput = (value: number | undefined): string => {
+    if (value === undefined || value === null) return '';
+    if (value >= 1000000) {
+        return (value / 1000000).toString().replace('.', ',');
+    }
+    if (value >= 1000) {
+        return (value / 1000).toString();
+    }
+    return value.toString();
+};
+
 const getNextAvailablePlayerId = (teamId: string, players: Player[]): string => {
     const teamPrefix = teamId.replace('team', '');
     const existingIdNumbers = new Set(
@@ -214,6 +238,7 @@ const playerPositions = ['Portero', 'Defensa', 'Mediocampista', 'Delantero'];
 
 const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen: boolean, onClose: () => void, onSave: (player: Player) => void, teamId: string, players: Player[] }) => {
   const [player, setPlayer] = useState<Partial<Player>>({ stats: {}, teamId });
+  const [valueInput, setValueInput] = useState('');
   const [selectedNationality, setSelectedNationality] = useState<Country | null>(null);
   const [newFileData, setNewFileData] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -224,6 +249,7 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
     setSelectedNationality(null);
     setNewFileData(null);
     setIsSaving(false);
+    setValueInput('');
   };
   
   const handleClose = () => {
@@ -233,7 +259,12 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type } = e.target;
-    setPlayer(prev => ({ ...prev, [id]: type === 'number' ? parseInt(value) || 0 : value }));
+    if (type === 'number') {
+        const numValue = value === '' ? undefined : parseInt(value, 10);
+        setPlayer(prev => ({ ...prev, [id]: isNaN(numValue as number) ? undefined : numValue }));
+    } else {
+        setPlayer(prev => ({ ...prev, [id]: value }));
+    }
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -268,12 +299,13 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
     }
 
     const finalPlayer: Player = {
-        ...(player as Omit<Player, 'id' | 'imageUrl' | 'imageFileId' | 'needsPhotoUpdate' | 'nationality'>),
+        ...(player as Omit<Player, 'id' | 'imageUrl' | 'imageFileId' | 'needsPhotoUpdate' | 'nationality' | 'value'>),
         id: newPlayerId,
         imageUrl: uploadResult.url,
         imageFileId: uploadResult.fileId,
         teamId: teamId,
         nationality: selectedNationality?.value,
+        value: parsePlayerValue(valueInput),
     };
     onSave(finalPlayer);
     toast({ title: 'Éxito', description: 'Jugador agregado correctamente.' });
@@ -295,7 +327,7 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="jerseyNumber" className="text-right">Dorsal</Label>
-            <Input id="jerseyNumber" type="number" value={player.jerseyNumber || ''} onChange={handleChange} className="col-span-3" />
+            <Input id="jerseyNumber" type="number" value={player.jerseyNumber ?? ''} onChange={handleChange} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="nationality" className="text-right">Nacionalidad</Label>
@@ -304,6 +336,14 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
               onChange={setSelectedNationality}
               className="col-span-3"
             />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="birthDate" className="text-right">Fec. Nacimiento</Label>
+            <Input id="birthDate" value={player.birthDate || ''} onChange={handleChange} className="col-span-3" placeholder="DD/MM/YYYY" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="value" className="text-right">Valor (€)</Label>
+            <Input id="value" type="text" value={valueInput} onChange={(e) => setValueInput(e.target.value)} placeholder="Ej: 1,5 (mill) o 400 (mil)" className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="position" className="text-right">Posición</Label>
@@ -364,6 +404,7 @@ const EditPlayerDialog = ({
   onSave: (player: Player) => void;
 }) => {
   const [editedPlayer, setEditedPlayer] = useState<Player | null>(null);
+  const [valueInput, setValueInput] = useState('');
   const [selectedNationality, setSelectedNationality] = useState<Country | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [newFileData, setNewFileData] = useState<string | null>(null);
@@ -378,6 +419,8 @@ const EditPlayerDialog = ({
       const initialNationality = player.nationality ? countryMap.get(player.nationality) || null : null;
       setSelectedNationality(initialNationality);
       
+      setValueInput(formatValueForInput(player.value));
+
       let initialImageUrl = player.imageUrl || '';
       if (initialImageUrl && !initialImageUrl.startsWith('http') && !initialImageUrl.startsWith('data:')) {
         initialImageUrl = `${IMAGEKIT_URL_ENDPOINT}/${player.teamId}/${player.imageUrl}`;
@@ -424,7 +467,7 @@ const EditPlayerDialog = ({
   const handleSave = async () => {
     if (!editedPlayer) return;
     setIsSaving(true);
-    let finalPlayer = { ...editedPlayer, nationality: selectedNationality?.value };
+    let finalPlayer = { ...editedPlayer, nationality: selectedNationality?.value, value: parsePlayerValue(valueInput) };
     
     if (imageAction === 'replace' && newFileData) {
         if (player?.imageFileId) {
@@ -455,6 +498,7 @@ const EditPlayerDialog = ({
   const handleClose = () => {
     setIsSaving(false);
     setImageAction('keep');
+    setValueInput('');
     onClose();
   }
 
@@ -484,6 +528,14 @@ const EditPlayerDialog = ({
                   onChange={setSelectedNationality}
                   className="col-span-3"
               />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="birthDate" className="text-right">Fec. Nacimiento</Label>
+            <Input id="birthDate" value={editedPlayer.birthDate ?? ''} onChange={(e) => handleInputChange('birthDate', e.target.value)} className="col-span-3" placeholder="DD/MM/YYYY" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="value" className="text-right">Valor (€)</Label>
+            <Input id="value" type="text" value={valueInput} onChange={(e) => setValueInput(e.target.value)} placeholder="Ej: 1,5 (mill) o 400 (mil)" className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="position" className="text-right">Posición</Label>
@@ -991,7 +1043,7 @@ export default function TeamViewPage() {
                                         <Users className="mr-3 h-6 w-6" />
                                         Jugadores ({players.length})
                                     </CardTitle>
-                                    <div className="flex items-center gap-2 flex-wrap justify-end lg:flex-nowrap">
+                                    <div className="flex items-center gap-2 flex-wrap justify-end">
                                          <Select value={selectedPosition} onValueChange={setSelectedPosition}>
                                             <SelectTrigger className="w-[180px]">
                                                 <SelectValue placeholder="Filtrar por posición" />

@@ -24,6 +24,8 @@ export interface Player {
   teamId: string;
   needsPhotoUpdate?: boolean;
   nationality?: string;
+  birthDate?: string;
+  value?: number;
 }
 
 export interface Coach {
