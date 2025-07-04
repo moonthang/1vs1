@@ -50,42 +50,44 @@ Además, la aplicación incluye un **Panel de Administración** protegido por co
 | <img src="https://cdn.worldvectorlogo.com/logos/typescript.svg" width="20" height="20" alt="TypeScript"/> **TypeScript** | Superset de JavaScript que añade tipado estático para mayor robustez y mantenibilidad del código. |
 | <img src="https://cdn.worldvectorlogo.com/logos/tailwind-css-2.svg" width="20" height="20" alt="Tailwind CSS"/> **Tailwind CSS** | Framework CSS de utilidad para un diseño rápido y personalizado. |
 | <img src="https://avatars.githubusercontent.com/u/139895814?s=200&v=4" width="20" height="20" alt="ShadCN UI"/> **ShadCN UI** | Componentes de UI reutilizables, accesibles y personalizables. |
-| <img src="https://raw.githubusercontent.com/pmndrs/zustand/main/logo.png" width="20" height="20" alt="Zustand"/> **Zustand** | Gestor de estado minimalista y potente para React. |
-| <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/logo.svg" width="20" height="20" alt="Lucide Icons"/> **Lucide Icons** | Biblioteca de iconos SVG, limpia y consistente. |
+| <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpHj4UwTW4ANSlNjzQOiiOqfDa6kal9RpF0A&s" width="20" height="20" alt="Zustand"/> **Zustand** | Gestor de estado minimalista y potente para React. |
+| <img src="https://avatars.githubusercontent.com/u/66879934?v=4" width="20" height="20" alt="Lucide Icons"/> **Lucide Icons** | Biblioteca de iconos SVG, limpia y consistente. |
+|  **React Select** | Componente avanzado para selectores con búsqueda y personalización. |
+|  **html-to-image** | Librería para convertir un nodo HTML del DOM en una imagen. |
 
 ### **Backend y Base de Datos**
 | Tecnología | Descripción |
 | :--- | :--- |
-| <img src="https://cdn.worldvectorlogo.com/logos/firebase.svg" width="20" height="20" alt="Firebase"/> **Firebase** | Utilizado como el backend principal. **Cloud Firestore** actúa como la base de datos NoSQL en tiempo real para almacenar equipos, jugadores y estadísticas. **Firebase Authentication** se usa para proteger el panel de administración. |
+| <img src="https://cdn4.iconfinder.com/data/icons/google-i-o-2016/512/google_firebase-2-512.png" width="20" height="20" alt="Firebase"/> **Firebase** | Utilizado como el backend principal. **Cloud Firestore** actúa como la base de datos NoSQL en tiempo real para almacenar equipos, jugadores y estadísticas. **Firebase Authentication** se usa para proteger el panel de administración. |
 
 ### **Gestión de Imágenes** 
 | Tecnología | Descripción |
 | :--- | :--- |
-| <img src="https://ik.imagekit.io/yep90k5vx/logo-imagekit_y3DS19Y62.svg" width="20" height="20" alt="ImageKit"/> **ImageKit.io** | CDN y servicio de optimización de imágenes para una carga rápida y eficiente de los logos y fotos de jugadores. |
+| <img src="https://media.licdn.com/dms/image/v2/C4D0BAQGFJ1PL2upDCg/company-logo_200_200/company-logo_200_200/0/1630483926785/imagekit_io_logo?e=2147483647&v=beta&t=ilQhn0wSkIYCBBBcp5_G-iZrf-ISHKUNVe-KupdF_48" width="20" height="20" alt="ImageKit"/> **ImageKit.io** | CDN y servicio de optimización de imágenes para una carga rápida y eficiente de los logos y fotos de jugadores. |
 
 ## ✨ Características Principales
 
-*   ✅ **Gestión Completa desde el Admin:** Crear, editar y eliminar equipos, jugadores y directores técnicos a través de una interfaz de administración intuitiva.
+*   ✅ **Gestión Completa desde el Admin:** Crear, editar, eliminar y **mover jugadores entre equipos**.
 *   🔐 **Autenticación Segura:** El panel de administración está protegido con Firebase Authentication (correo y contraseña).
 *   🎨 **Personalización Visual de Equipos:** Asignar logos, fotos, colores primarios/secundarios y estadísticas detalladas a cada equipo y jugador.
-*   🏳️ **Nacionalidad con Banderas:** Cada jugador y entrenador muestra su nacionalidad con una bandera. La selección se realiza a través de un buscador de países intuitivo y visual.
-*   📊 **Selección de Formación Táctica:** Elige entre formaciones populares (4-4-2, 4-3-3, 3-5-2, etc.) que se reflejan visualmente en un campo de fútbol interactivo.
+*   🏳️ **Nacionalidad con Banderas:** Cada jugador y entrenador muestra su nacionalidad. La selección se realiza a través de un **buscador de países intuitivo y visual**.
+*   📊 **Selección de Formación Táctica:** Elige entre formaciones populares (4-4-2, 4-3-3, etc.) que se reflejan visualmente en un campo de fútbol interactivo.
 *   👆 **Campo de Fútbol Interactivo:** Coloca jugadores en una representación gráfica del campo. Los jugadores seleccionados muestran su foto y nombre.
 *   🧠 **Modal de Selección Inteligente:** Al hacer clic en una posición, un modal muestra solo los jugadores elegibles, con sus estadísticas, y permite buscar y ordenar para facilitar la selección.
 *   🖼️ **Exportación a Imagen:** Descarga una imagen de alta calidad de tu alineación final, lista para compartir en redes sociales.
 *   💾 **Persistencia de Datos:** Las alineaciones se guardan en el `localStorage` del navegador, permitiendo a los usuarios continuar donde lo dejaron.
 *   📱 **Interfaz Responsiva:** Diseño completamente adaptable que funciona a la perfección en dispositivos de escritorio, tabletas y móviles.
-*   🔄 **Importación/Exportación de Datos:** Respalda y restaura toda la información de los equipos con archivos JSON.
+*   🔄 **Importación/Exportación de Datos:** Respalda y restaura toda la información de los equipos con archivos JSON desde el panel de administración.
 
 ## 📸 Capturas de Pantalla
 
 | Página Principal | Constructor de Alineaciones | Modal de Selección |
 | :---: | :---: | :---: |
-| ![Página Principal](https://placehold.co/600x400.png) | ![Constructor de Alineaciones](https://placehold.co/600x400.png) | ![Modal de Selección](https://placehold.co/600x400.png) |
+| ![Página Principal](https://ik.imagekit.io/mdjzw07s9/Capturas/paginaPrincipal?updatedAt=1751585612252) | ![Constructor de Alineaciones](https://ik.imagekit.io/mdjzw07s9/Capturas/constructorAlineaciones?updatedAt=1751585951491) | ![Modal de Selección](https://ik.imagekit.io/mdjzw07s9/Capturas/modalSeleccion?updatedAt=1751585969628) |
 
 | Panel de Administración | Edición de Plantilla |
 | :---: | :---: |
-| ![Panel de Administración](https://placehold.co/600x400.png) | ![Edición de Plantilla](https://placehold.co/600x400.png) |
+| ![Panel de Administración](https://ik.imagekit.io/mdjzw07s9/Capturas/panelAdministracion?updatedAt=1751586000793) | ![Edición de Plantilla](https://ik.imagekit.io/mdjzw07s9/Capturas/edicionPlantilla?updatedAt=1751585984305) |
 
 
 ## 🧑‍💻 Uso del Sistema
@@ -117,12 +119,15 @@ El proyecto sigue una estructura organizada basada en las mejores prácticas de 
 │   │   ├── PlayerCard.tsx      # Tarjeta para mostrar la información de un jugador.
 │   │   ├── PlayerSlot.tsx      # Círculo interactivo que representa una posición en el campo.
 │   │   ├── FormationSelector.tsx # Permite al usuario elegir una formación táctica.
-│   │   └── PlayerComparisonModal.tsx # Modal para buscar y seleccionar jugadores.
+│   │   ├── PlayerComparisonModal.tsx # Modal para buscar y seleccionar jugadores.
+│   │   └── NationalitySelector.tsx # Selector de país con búsqueda.
 │   ├── data/               # Datos estáticos (ej. lista de países)
-│   ├── hooks/              # Hooks personalizados de React (use-mobile, use-toast)
+│   ├── hooks/              # Hooks personalizados (use-mobile, use-toast)
 │   ├── lib/                # Funciones de utilidad y configuraciones (firebase, imagekit, etc.)
 │   ├── store/              # Lógica de estado global con Zustand
 │   └── types/              # Definiciones de TypeScript
+├── docs/
+│   └── blueprint.md        # Documentación de arquitectura y desarrollo
 ├── next.config.ts          # Configuración de Next.js
 ├── tailwind.config.ts      # Configuración de Tailwind CSS
 └── tsconfig.json           # Configuración de TypeScript
@@ -145,6 +150,7 @@ Ideas y características potenciales para futuras versiones:
 *   [ ] **Arrastrar y Soltar (Drag and Drop):** Implementar la funcionalidad de arrastrar jugadores desde la plantilla al campo para una experiencia más fluida.
 *   [ ] **Pruebas Unitarias e Integración:** Añadir un conjunto de pruebas con Jest y React Testing Library para garantizar la robustez de la aplicación.
 *   [ ] **Internacionalización (i18n):** Implementar soporte para múltiples idiomas.
+*   [ ] **Nuevo Modo 11 Ideal Liga:** Armar un equipo ideal donde permite seleccionar jugadores de todos los equipos.
 
 ## 👨‍💻 Autor
 
@@ -152,3 +158,4 @@ Este proyecto fue desarrollado por **Miguel Angel Sepulveda Burgos**.
 
 *   <img src="https://cdn.worldvectorlogo.com/logos/github-icon-2.svg" width="20" height="20"/> GitHub: [@moonthang](https://github.com/moonthang)
 *   <img src="https://static.vecteezy.com/system/resources/previews/018/930/480/non_2x/linkedin-logo-linkedin-icon-transparent-free-png.png" width="20" height="20"/> LinkedIn: [Miguel Ángel Sepulveda Burgos](https://www.linkedin.com/in/miguel-%C3%A1ngel-sep%C3%BAlveda-burgos-a87808167/)
+

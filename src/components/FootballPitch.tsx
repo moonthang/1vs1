@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from 'react';
 import { useLineupStore } from '@/store/lineupStore';
 import { PlayerSlot } from './PlayerSlot';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';

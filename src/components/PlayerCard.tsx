@@ -1,11 +1,14 @@
+
 "use client";
 
 import type { Player } from '@/types';
 import Image from 'next/image';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { User, Target, ShieldCheck, Zap, ArrowRightLeft, Dumbbell, ListChecks, Goal, Handshake, Star } from 'lucide-react';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { User, Target, ShieldCheck, Zap, ArrowRightLeft, Dumbbell, ListChecks, Goal, Handshake, Star, RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { IMAGEKIT_URL_ENDPOINT } from '@/lib/imagekit';
+import { Badge } from '@/components/ui/badge';
+import { countryMap } from '@/data/countries';
 
 interface PlayerCardProps {
   player: Player;
@@ -62,6 +65,8 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
   const finalSrc = hasError 
     ? `https://placehold.co/${showStats ? '120x120' : '48x48'}.png?text=Err` 
     : calculatedImageUrl;
+    
+  const country = player.nationality ? countryMap.get(player.nationality) : null;
   
   return (
     <Card
@@ -77,7 +82,7 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
     >
       {showStats ? (
         <div className="grid grid-cols-10 gap-x-2 p-2 items-start">
-          <div className="col-span-3 flex-shrink-0">
+          <div className="col-span-3 flex-shrink-0 relative">
             <Image
               key={finalSrc}
               src={finalSrc}
@@ -87,22 +92,25 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
               className="rounded-md object-cover aspect-[3/4] border border-muted"
               onError={() => setHasError(true)}
             />
+             {player.needsPhotoUpdate && (
+                <div className="absolute bottom-1 right-1 left-1 z-10">
+                    <Badge variant="destructive" className="w-full justify-center text-[10px] px-1 py-0.5 animate-pulse leading-tight">
+                        <RefreshCw className="w-2.5 h-2.5 mr-1" />
+                        Actualizar Foto
+                    </Badge>
+                </div>
+            )}
           </div>
 
           <div className="col-span-3 flex flex-col justify-start">
             <CardTitle className="text-sm font-headline leading-tight mb-1">{player.name}</CardTitle>
-            <CardDescription className="text-xs">
-                {player.position === 'DT' ? player.position : `#${player.jerseyNumber} - ${player.position}`}
-            </CardDescription>
-             {player.nationality && (
-                <div className="mt-1">
-                  <Image 
-                      src={`https://flagcdn.com/w20/${player.nationality.toLowerCase()}.png`}
-                      alt={`${player.nationality} flag`}
-                      width={16}
-                      height={12}
-                      className="border border-muted"
-                  />
+            <p className="text-xs text-muted-foreground">
+              {player.position === 'DT' ? player.position : `#${player.jerseyNumber} - ${player.position}`}
+            </p>
+            {country && (
+                <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                    <Image src={country.flag} alt={country.label} width={16} height={12} className="border border-muted" />
+                    <span>{country.label}</span>
                 </div>
             )}
           </div>
@@ -146,20 +154,15 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
               className="rounded-full object-cover"
               onError={() => setHasError(true)}
             />
-            <div>
+            <div className="flex flex-col">
               <CardTitle className="text-base font-headline">{player.name}</CardTitle>
-              <CardDescription className="text-xs">
+              <p className="text-sm text-muted-foreground">
                 {player.position === 'DT' ? player.position : `#${player.jerseyNumber} - ${player.position}`}
-              </CardDescription>
-              {player.nationality && (
-                  <div className="mt-1">
-                    <Image 
-                        src={`https://flagcdn.com/w20/${player.nationality.toLowerCase()}.png`}
-                        alt={`${player.nationality} flag`}
-                        width={16}
-                        height={12}
-                        className="border border-muted"
-                    />
+              </p>
+              {country && (
+                  <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                      <Image src={country.flag} alt={country.label} width={16} height={12} className="border border-muted" />
+                      <span>{country.label}</span>
                   </div>
               )}
             </div>

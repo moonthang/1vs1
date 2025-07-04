@@ -83,12 +83,15 @@ export default function BuildPage() {
   
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 md:p-8">
-      <header className="text-center mb-8 relative w-full max-w-4xl">
-        <Button variant="ghost" size="icon" className="absolute left-0 top-1/2 -translate-y-1/2" onClick={() => router.push('/')}>
+      <header className="mb-8 flex w-full max-w-4xl items-center justify-between">
+        <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
             <ArrowLeft />
         </Button>
-        <h1 className="text-4xl font-bold text-primary">Arma tu Equipo</h1>
-        <p className="text-muted-foreground mt-2">Selecciona un equipo para armar su alineación.</p>
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-primary">Arma tu Equipo</h1>
+          <p className="text-muted-foreground mt-2">Selecciona un equipo para armar su alineación.</p>
+        </div>
+        <div className="w-10" />
       </header>
 
       <main className="w-full max-w-4xl">

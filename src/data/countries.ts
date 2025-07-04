@@ -1,10 +1,7 @@
 
-export interface Country {
-  name: string;
-  code: string;
-}
+import type { Country } from '@/types';
 
-export const countries: Country[] = [
+const countryData: { name: string; code: string }[] = [
   { name: 'Afghanistan', code: 'AF' },
   { name: 'Aland Islands', code: 'AX' },
   { name: 'Albania', code: 'AL' },
@@ -249,3 +246,11 @@ export const countries: Country[] = [
   { name: 'Zambia', code: 'ZM' },
   { name: 'Zimbabwe', code: 'ZW' },
 ];
+
+export const countries: Country[] = countryData.map(country => ({
+  value: country.code,
+  label: country.name,
+  flag: `https://flagcdn.com/w20/${country.code.toLowerCase()}.png`,
+}));
+
+export const countryMap = new Map(countries.map(c => [c.value, c]));

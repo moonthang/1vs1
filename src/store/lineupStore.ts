@@ -1,3 +1,4 @@
+
 "use client";
 
 import { create } from 'zustand';
@@ -6,7 +7,6 @@ import { formations as defaultFormations } from '@/lib/formations';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
-// Clave para el estado en localStorage, versionada para evitar conflictos.
 const LINEUP_STATE_KEY_PREFIX = '1vs1FutDraftState_v3_';
 
 interface LineupState {
@@ -47,7 +47,6 @@ const coachToPlayer = (coach: Coach, teamId: string): Player => ({
     stats: {},
     imageUrl: coach.imageUrl || '',
     imageFileId: coach.imageFileId,
-    nationality: coach.nationality,
     teamId: teamId,
 });
 
@@ -101,7 +100,7 @@ export const useLineupStore = create<LineupState>((set, get) => ({
           set({
             selectedFormationKey: formationExists ? selectedFormationKey : (get().formations.length > 0 ? get().formations[0].key : null),
             idealLineup: idealLineup || {},
-            isBenchVisible: isBenchVisible !== false, // Default to true
+            isBenchVisible: isBenchVisible !== false,
           });
         } catch (e) {
           console.error("Error hydrating state from localStorage:", e);

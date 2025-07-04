@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLineupStore } from '@/store/lineupStore';
@@ -158,14 +158,17 @@ function LineupShowdownComponent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground px-4 md:px-8 pt-2 md:pt-4 pb-4 md:pb-8">
-      <header className="mb-0 text-center relative">
-        <Button variant="ghost" size="icon" className="absolute left-0 top-1/2 -translate-y-1/2" onClick={() => router.back()}>
+      <header className="mb-0 flex w-full items-center justify-between">
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft />
         </Button>
-        <div className="flex justify-center">
-          <Image src={logo1vs1} alt="1 VS 1 Logo" width={50} height={61} priority />
+        <div className="text-center">
+            <div className="flex justify-center">
+              <Image src={logo1vs1} alt="1 VS 1 Logo" width={50} height={61} priority />
+            </div>
+            <p className="text-muted-foreground mt-1">{pageTitle}</p>
         </div>
-        <p className="text-muted-foreground mt-1">{pageTitle}</p>
+        <div className="w-10" />
       </header>
 
        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8">

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, PlusCircle, Eye, Edit, Trash2, Loader2, UploadCloud, Download, X, LogOut } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Eye, Edit, Trash2, Loader2, UploadCloud, Download, X, LogOut, Menu } from 'lucide-react';
 import type { TeamInfo } from '@/types';
 import {
   Dialog,
@@ -27,6 +27,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -96,7 +103,7 @@ const EditTeamDialog = ({
             updatedData.logoUrl = uploadResult.url;
             updatedData.logoFileId = uploadResult.fileId;
         } else {
-            toast({ variant: 'destructive', title: 'Error de Subida', description: uploadResult.error });
+            toast({ variant: 'destructive', title: 'Error de Subida', description: 'No se pudo subir el nuevo logo.' });
             setIsSaving(false);
             return;
         }
@@ -162,7 +169,7 @@ const EditTeamDialog = ({
                       </Button>
                   </div>
               ) : (
-                  <Input id="team-logo" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, image/svg+xml" />
+                  <Input id="team-logo" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, image/svg+xml, image/webp" />
               )}
             </div>
           </div>
@@ -260,7 +267,7 @@ const AddTeamDialog = ({ isOpen, onClose, onSave, teams }: { isOpen: boolean; on
         const uploadResult = await uploadImage(newFileData, `${teamId}-logo.png`, `/${teamId}`);
 
         if (!uploadResult.success || !uploadResult.url || !uploadResult.fileId) {
-            toast({ variant: 'destructive', title: 'Error de subida', description: uploadResult.error });
+            toast({ variant: 'destructive', title: 'Error de subida', description: 'No se pudo subir el logo del equipo.' });
             setIsSaving(false);
             return;
         }
@@ -293,9 +300,6 @@ const AddTeamDialog = ({ isOpen, onClose, onSave, teams }: { isOpen: boolean; on
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Agregar Nuevo Equipo</DialogTitle>
-                    <DialogDescription>
-                        Ingresa los detalles del nuevo equipo.
-                    </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     {newFileData && (
@@ -315,7 +319,7 @@ const AddTeamDialog = ({ isOpen, onClose, onSave, teams }: { isOpen: boolean; on
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="new-team-logo" className="text-right">Logo</Label>
                         <div className="col-span-3">
-                            <Input id="new-team-logo" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, image/svg+xml" />
+                            <Input id="new-team-logo" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, image/svg+xml, image/webp" />
                         </div>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -533,7 +537,7 @@ export default function AdminPage() {
                     throw new Error("El archivo JSON no tiene el formato esperado.");
                 }
             } catch (error: any) {
-                toast({ variant: "destructive", title: "Error de Importación", description: error.message || "El archivo no es un JSON válido." });
+                toast({ variant: "destructive", title: "Error de Importación", description: "El archivo no es un JSON válido o tiene un formato incorrecto." });
                 setImportData(null);
             } finally {
                 if (event.target) event.target.value = '';
@@ -583,31 +587,43 @@ export default function AdminPage() {
         <div className="min-h-screen bg-background text-foreground flex flex-col items-center p-4 md:p-8">
             <div className="w-full max-w-6xl">
                 <header className="mb-8 flex flex-col items-center gap-4">
-                    <div className="relative flex w-full items-center justify-center">
-                        <Button variant="ghost" size="icon" className="absolute left-0" onClick={() => router.push('/')}>
+                    <div className="flex w-full items-center justify-between">
+                        <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
                             <ArrowLeft />
                         </Button>
-                        <h1 className="text-3xl font-bold text-primary text-center sm:text-4xl px-12">
+                        <h1 className="text-3xl font-bold text-primary text-center sm:text-4xl">
                             Panel de Administración
                         </h1>
+                        <div className="w-10" />
                     </div>
                     <div className="flex w-full justify-center gap-2 flex-wrap">
                         <Button onClick={() => setAddModalOpen(true)}>
                             <PlusCircle className="mr-2 h-5 w-5" />
                             Agregar Equipo
                         </Button>
-                        <Button variant="outline" onClick={handleImportClick}>
-                            <UploadCloud className="mr-2 h-5 w-5" />
-                            Importar
-                        </Button>
-                        <Button variant="outline" onClick={handleExport}>
-                            <Download className="mr-2 h-5 w-5" />
-                            Exportar
-                        </Button>
-                        <Button variant="destructive" onClick={handleSignOut}>
-                            <LogOut className="mr-2 h-5 w-5" />
-                            Cerrar Sesión
-                        </Button>
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <Menu className="h-5 w-5" />
+                                    <span className="sr-only">Abrir menú de acciones</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleImportClick}>
+                                    <UploadCloud className="mr-2 h-4 w-4" />
+                                    <span>Importar</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleExport}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Exportar</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Cerrar Sesión</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </header>
 
@@ -636,7 +652,10 @@ export default function AdminPage() {
                         teams.map((team) => (
                             <Card key={team.id} className="flex flex-col">
                                 <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-                                    <div className="w-4 h-12 rounded-full" style={{ backgroundColor: team.primaryColor || '#ccc' }}></div>
+                                    <div 
+                                        className="w-4 h-12 rounded-full border border-border" 
+                                        style={{ background: `linear-gradient(to bottom, ${team.primaryColor || '#ccc'} 50%, ${team.secondaryColor || '#ccc'} 50%)` }}
+                                    ></div>
                                     <Image 
                                         src={team.logoUrl} 
                                         alt={`${team.name} logo`} 
@@ -656,14 +675,10 @@ export default function AdminPage() {
                                             <TooltipTrigger asChild>
                                                 <Button
                                                     variant="outline"
-                                                    size="sm"
-                                                    className="justify-center group flex items-center w-10 hover:w-24 h-10 transition-all duration-300 overflow-hidden"
+                                                    size="icon"
                                                     onClick={() => handleViewTeam(team.id)}
                                                 >
-                                                    <Eye className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-2" />
-                                                    <span className="opacity-0 w-0 group-hover:opacity-100 group-hover:w-auto group-hover:ml-2 transition-all duration-300 overflow-hidden whitespace-nowrap">
-                                                        Ver
-                                                    </span>
+                                                    <Eye className="h-4 w-4" />
                                                 </Button>
                                             </TooltipTrigger>
                                             <TooltipContent>
@@ -675,14 +690,10 @@ export default function AdminPage() {
                                             <TooltipTrigger asChild>
                                                 <Button
                                                     variant="outline"
-                                                    size="sm"
-                                                    className="justify-center group flex items-center w-10 hover:w-28 h-10 transition-all duration-300 overflow-hidden"
+                                                    size="icon"
                                                     onClick={() => handleOpenEditModal(team)}
                                                 >
-                                                    <Edit className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-2" />
-                                                    <span className="opacity-0 w-0 group-hover:opacity-100 group-hover:w-auto group-hover:ml-2 transition-all duration-300 overflow-hidden whitespace-nowrap">
-                                                        Editar
-                                                    </span>
+                                                    <Edit className="h-4 w-4" />
                                                 </Button>
                                             </TooltipTrigger>
                                             <TooltipContent>
@@ -696,14 +707,10 @@ export default function AdminPage() {
                                                     <AlertDialogTrigger asChild>
                                                         <Button
                                                             variant="destructive"
-                                                            size="sm"
-                                                            className="justify-center group flex items-center w-10 hover:w-32 h-10 transition-all duration-300 overflow-hidden"
+                                                            size="icon"
                                                             onClick={() => setTeamToDelete(team)}
                                                         >
-                                                            <Trash2 className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-2" />
-                                                            <span className="opacity-0 w-0 group-hover:opacity-100 group-hover:w-auto group-hover:ml-2 transition-all duration-300 overflow-hidden whitespace-nowrap">
-                                                                Eliminar
-                                                            </span>
+                                                            <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </AlertDialogTrigger>
                                                 </TooltipTrigger>

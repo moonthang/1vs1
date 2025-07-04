@@ -5,7 +5,6 @@ export interface Player {
   name: string;
   jerseyNumber: number;
   position: string;
-  nationality?: string;
   stats: {
     pace?: number;
     shooting?: number;
@@ -23,6 +22,8 @@ export interface Player {
   imageUrl: string; 
   imageFileId?: string;
   teamId: string;
+  needsPhotoUpdate?: boolean;
+  nationality?: string;
 }
 
 export interface Coach {
@@ -63,4 +64,10 @@ export interface Formation {
   key: string;
   name: string;
   positions: PositionSlot[];
+}
+
+export interface Country {
+  value: string;
+  label: string;
+  flag: string;
 }
