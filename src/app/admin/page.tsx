@@ -95,30 +95,45 @@ const EditTeamDialog = ({
     setIsSaving(true);
     let updatedData: Partial<TeamInfo> = { name, primaryColor, secondaryColor };
 
-    if (imageAction === 'replace' && newFileData) {
-        if (team.logoFileId) {
-            await deleteImage(team.logoFileId);
+    try {
+        if (imageAction === 'replace' && newFileData) {
+            if (team.logoFileId) {
+                const deleteResult = await deleteImage(team.logoFileId);
+                if (!deleteResult.success) {
+                    toast({ variant: 'destructive', title: 'Error de borrado', description: deleteResult.error || 'No se pudo borrar el logo anterior.' });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+            const uploadResult = await uploadImage(newFileData, `${team.id}-logo.png`, `/${team.id}`);
+            if (uploadResult.success && uploadResult.url && uploadResult.fileId) {
+                updatedData.logoUrl = uploadResult.url;
+                updatedData.logoFileId = uploadResult.fileId;
+            } else {
+                toast({ variant: 'destructive', title: 'Error de Subida', description: uploadResult.error || 'No se pudo subir el nuevo logo.' });
+                setIsSaving(false);
+                return;
+            }
+        } else if (imageAction === 'remove') {
+            if (team.logoFileId) {
+                const deleteResult = await deleteImage(team.logoFileId);
+                if (!deleteResult.success) {
+                    toast({ variant: 'destructive', title: 'Error de borrado', description: deleteResult.error || 'No se pudo borrar el logo.' });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+            updatedData.logoUrl = '';
+            updatedData.logoFileId = '';
         }
-        const uploadResult = await uploadImage(newFileData, `${team.id}-logo.png`, `/${team.id}`);
-        if (uploadResult.success && uploadResult.url && uploadResult.fileId) {
-            updatedData.logoUrl = uploadResult.url;
-            updatedData.logoFileId = uploadResult.fileId;
-        } else {
-            toast({ variant: 'destructive', title: 'Error de Subida', description: 'No se pudo subir el nuevo logo.' });
-            setIsSaving(false);
-            return;
-        }
-    } else if (imageAction === 'remove') {
-        if (team.logoFileId) {
-            await deleteImage(team.logoFileId);
-        }
-        updatedData.logoUrl = '';
-        updatedData.logoFileId = '';
-    }
     
-    onSave(team.id, updatedData);
-    setIsSaving(false);
-    onClose();
+        onSave(team.id, updatedData);
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error inesperado', description: 'Ocurrió un error al guardar.' });
+    } finally {
+        setIsSaving(false);
+        onClose();
+    }
   };
 
   const handleClose = () => {
@@ -268,7 +283,7 @@ const AddTeamDialog = ({ isOpen, onClose, onSave, teams }: { isOpen: boolean; on
         const uploadResult = await uploadImage(newFileData, `${teamId}-logo.png`, `/${teamId}`);
 
         if (!uploadResult.success || !uploadResult.url || !uploadResult.fileId) {
-            toast({ variant: 'destructive', title: 'Error de subida', description: 'No se pudo subir el logo del equipo.' });
+            toast({ variant: 'destructive', title: 'Error de subida', description: uploadResult.error || 'No se pudo subir el logo del equipo.' });
             setIsSaving(false);
             return;
         }
@@ -458,7 +473,12 @@ export default function AdminPage() {
         if (!teamToDelete) return;
         try {
             if (teamToDelete.logoFileId) {
-                await deleteImage(teamToDelete.logoFileId);
+                const deleteResult = await deleteImage(teamToDelete.logoFileId);
+                if (!deleteResult.success) {
+                    toast({ variant: "destructive", title: "Error", description: `No se pudo eliminar la imagen del equipo. ${deleteResult.error || ''}` });
+                    setTeamToDelete(null);
+                    return;
+                }
             }
             await deleteDoc(doc(db, 'equipos', teamToDelete.id));
             setTeams(currentTeams => currentTeams.filter(t => t.id !== teamToDelete.id));

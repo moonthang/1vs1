@@ -138,29 +138,45 @@ const EditCoachDialog = ({ isOpen, onClose, coach, teamId, onSave }: { isOpen: b
     setIsSaving(true);
     let updatedCoach: Coach = { ...coach, name, nationality: selectedNationality?.value };
 
-    if (imageAction === 'replace' && newFileData) {
-        if (coach.imageFileId) {
-            await deleteImage(coach.imageFileId);
+    try {
+        if (imageAction === 'replace' && newFileData) {
+            if (coach.imageFileId) {
+                const deleteResult = await deleteImage(coach.imageFileId);
+                if (!deleteResult.success) {
+                    toast({ variant: 'destructive', title: 'Error de borrado', description: deleteResult.error || 'No se pudo borrar la imagen anterior.' });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+            const uploadResult = await uploadImage(newFileData, `${name.replace(/\s+/g, '_')}-coach.png`, `/${teamId}`);
+            if (uploadResult.success && uploadResult.url && uploadResult.fileId) {
+                updatedCoach.imageUrl = uploadResult.url;
+                updatedCoach.imageFileId = uploadResult.fileId;
+            } else {
+                toast({ variant: 'destructive', title: 'Error de subida', description: uploadResult.error || "No se pudo subir la imagen del DT." });
+                setIsSaving(false);
+                return;
+            }
+        } else if (imageAction === 'remove') {
+            if (coach.imageFileId) {
+                const deleteResult = await deleteImage(coach.imageFileId);
+                if (!deleteResult.success) {
+                    toast({ variant: 'destructive', title: 'Error de borrado', description: deleteResult.error || 'No se pudo borrar la imagen.' });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+            updatedCoach.imageUrl = '';
+            updatedCoach.imageFileId = '';
         }
-        const uploadResult = await uploadImage(newFileData, `${name.replace(/\s+/g, '_')}-coach.png`, `/${teamId}`);
-        if (uploadResult.success && uploadResult.url && uploadResult.fileId) {
-            updatedCoach.imageUrl = uploadResult.url;
-            updatedCoach.imageFileId = uploadResult.fileId;
-        } else {
-            toast({ variant: 'destructive', title: 'Error de subida', description: "No se pudo subir la imagen del DT." });
-            setIsSaving(false);
-            return;
-        }
-    } else if (imageAction === 'remove') {
-        if (coach.imageFileId) {
-            await deleteImage(coach.imageFileId);
-        }
-        updatedCoach.imageUrl = '';
-        updatedCoach.imageFileId = '';
+        
+        onSave(updatedCoach);
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error inesperado', description: 'Ocurrió un error al guardar.' });
+    } finally {
+        setIsSaving(false);
+        onClose();
     }
-    
-    onSave(updatedCoach);
-    onClose();
   };
   
   const handleClose = () => {
@@ -294,7 +310,7 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
     
     const uploadResult = await uploadImage(newFileData, `${newPlayerId}_${player.name.replace(/\s+/g, '_')}.png`, `/${teamId}`);
     if (!uploadResult.success || !uploadResult.url || !uploadResult.fileId) {
-        toast({ variant: 'destructive', title: 'Error de subida', description: "No se pudo subir la imagen del jugador." });
+        toast({ variant: 'destructive', title: 'Error de subida', description: uploadResult.error || "No se pudo subir la imagen del jugador." });
         setIsSaving(false);
         return;
     }
@@ -470,30 +486,46 @@ const EditPlayerDialog = ({
     setIsSaving(true);
     let finalPlayer = { ...editedPlayer, nationality: selectedNationality?.value, value: parsePlayerValue(valueInput) };
     
-    if (imageAction === 'replace' && newFileData) {
-        if (player?.imageFileId) {
-            await deleteImage(player.imageFileId);
+    try {
+        if (imageAction === 'replace' && newFileData) {
+            if (player?.imageFileId) {
+                const deleteResult = await deleteImage(player.imageFileId);
+                 if (!deleteResult.success) {
+                    toast({ variant: 'destructive', title: 'Error de borrado', description: deleteResult.error || 'No se pudo borrar la imagen anterior.' });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+            const uploadResult = await uploadImage(newFileData, `${editedPlayer.id}_${editedPlayer.name.replace(/\s+/g, '_')}.png`, `/${editedPlayer.teamId}`);
+            if (uploadResult.success && uploadResult.url && uploadResult.fileId) {
+                finalPlayer.imageUrl = uploadResult.url;
+                finalPlayer.imageFileId = uploadResult.fileId;
+                finalPlayer.needsPhotoUpdate = false;
+            } else {
+                toast({ variant: 'destructive', title: 'Error de subida', description: uploadResult.error || 'No se pudo subir la nueva imagen del jugador.' });
+                setIsSaving(false);
+                return;
+            }
+        } else if (imageAction === 'remove') {
+            if (player?.imageFileId) {
+                const deleteResult = await deleteImage(player.imageFileId);
+                if (!deleteResult.success) {
+                    toast({ variant: 'destructive', title: 'Error de borrado', description: deleteResult.error || 'No se pudo borrar la imagen.' });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+            finalPlayer.imageUrl = '';
+            finalPlayer.imageFileId = '';
         }
-        const uploadResult = await uploadImage(newFileData, `${editedPlayer.id}_${editedPlayer.name.replace(/\s+/g, '_')}.png`, `/${editedPlayer.teamId}`);
-        if (uploadResult.success && uploadResult.url && uploadResult.fileId) {
-            finalPlayer.imageUrl = uploadResult.url;
-            finalPlayer.imageFileId = uploadResult.fileId;
-            finalPlayer.needsPhotoUpdate = false;
-        } else {
-            toast({ variant: 'destructive', title: 'Error de subida', description: 'No se pudo subir la nueva imagen del jugador.' });
-            setIsSaving(false);
-            return;
-        }
-    } else if (imageAction === 'remove') {
-        if (player?.imageFileId) {
-            await deleteImage(player.imageFileId);
-        }
-        finalPlayer.imageUrl = '';
-        finalPlayer.imageFileId = '';
+        
+        onSave(finalPlayer as Player);
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error inesperado', description: 'Ocurrió un error al guardar.' });
+    } finally {
+        setIsSaving(false);
+        onClose();
     }
-    
-    onSave(finalPlayer as Player);
-    onClose();
   };
 
   const handleClose = () => {
@@ -834,7 +866,16 @@ export default function TeamViewPage() {
         if (!playerToDelete || !team) return;
         try {
             if (playerToDelete.imageFileId) {
-                await deleteImage(playerToDelete.imageFileId);
+                const deleteResult = await deleteImage(playerToDelete.imageFileId);
+                if (!deleteResult.success) {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Error de borrado',
+                        description: `No se pudo eliminar la imagen de ImageKit. El jugador no fue eliminado. ${deleteResult.error || ''}`
+                    });
+                    setPlayerToDelete(null);
+                    return;
+                }
             }
             const teamRef = doc(db, "equipos", teamId);
             const originalPlayerObject = team.players.find(p => p.id === playerToDelete.id);

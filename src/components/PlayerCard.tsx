@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { countryMap } from '@/data/countries';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, calculateAge } from '@/lib/utils';
 
 interface PlayerCardProps {
   player: Player;
@@ -22,25 +22,6 @@ interface PlayerCardProps {
   onEdit?: () => void;
   onMove?: () => void;
   onDelete?: () => void;
-}
-
-function calculateAge(birthDateString?: string): number | null {
-  if (!birthDateString || !/^\d{2}\/\d{2}\/\d{4}$/.test(birthDateString)) {
-    return null;
-  }
-  const parts = birthDateString.split('/');
-  const day = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10) - 1;
-  const year = parseInt(parts[2], 10);
-  const birthDate = new Date(year, month, day);
-  const today = new Date();
-  if (isNaN(birthDate.getTime())) return null;
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age;
 }
 
 const StatIcon = ({ statName }: { statName: string }) => {
