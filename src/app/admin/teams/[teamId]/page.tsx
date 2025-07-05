@@ -8,7 +8,7 @@ import type { Team, Player, Coach, TeamInfo } from '@/types';
 import type { Country } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, User, Users, PlusCircle, Edit, Trash2, Loader2, Eraser, X, ArrowRightLeft } from 'lucide-react';
+import { ArrowLeft, User, Users, PlusCircle, Edit, Trash2, Loader2, Eraser, X, ArrowRightLeft, BarChart3, Cake, Globe, Baby } from 'lucide-react';
 import { PlayerCard } from '@/components/PlayerCard';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -49,6 +49,7 @@ import logo1vs1 from '@/assets/logo/1vs1.png';
 import { NationalitySelector } from '@/components/NationalitySelector';
 import { countryMap } from '@/data/countries';
 import { ScrollToTopButton } from '@/components/ScrollToTopButton';
+import { calculateAge } from '@/lib/utils';
 
 const parsePlayerValue = (value: string | undefined): number | undefined => {
     if (!value || value.trim() === '') return undefined;
@@ -277,8 +278,14 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type } = e.target;
     if (type === 'number') {
-        const numValue = value === '' ? undefined : parseInt(value, 10);
-        setPlayer(prev => ({ ...prev, [id]: isNaN(numValue as number) ? undefined : numValue }));
+        let numValue: number | undefined = value === '' ? undefined : parseInt(value, 10);
+        if (numValue !== undefined && numValue < 0) {
+            numValue = 0;
+        }
+        if (isNaN(numValue as number)) {
+            numValue = undefined;
+        }
+        setPlayer(prev => ({ ...prev, [id]: numValue }));
     } else {
         setPlayer(prev => ({ ...prev, [id]: value }));
     }
@@ -344,7 +351,7 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="jerseyNumber" className="text-right">Dorsal</Label>
-            <Input id="jerseyNumber" type="number" value={player.jerseyNumber ?? ''} onChange={handleChange} className="col-span-3" />
+            <Input id="jerseyNumber" type="number" min="0" value={player.jerseyNumber ?? ''} onChange={handleChange} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="nationality" className="text-right">Nacionalidad</Label>
@@ -466,13 +473,45 @@ const EditPlayerDialog = ({
 
   const handleInputChange = (field: keyof Player, value: string | number | boolean | undefined | null) => {
     if (!editedPlayer) return;
-    setEditedPlayer(prev => prev ? { ...prev, [field]: value } : null);
+    
+    let processedValue = value;
+    if (field === 'jerseyNumber' && typeof value === 'string') {
+        let numValue = parseInt(value, 10);
+        if (isNaN(numValue)) numValue = 0;
+        if (numValue < 0) numValue = 0;
+        processedValue = numValue;
+    }
+
+    setEditedPlayer(prev => prev ? { ...prev, [field]: processedValue } : null);
   };
   
   const handleStatChange = (statKey: keyof Player['stats'], value: string) => {
     if (!editedPlayer) return;
     const isFloat = statFields.find(f => f.key === statKey)?.type === 'float';
-    const numValue = value === '' ? undefined : (isFloat ? parseFloat(value) : parseInt(value, 10));
+    
+    if (value === '') {
+        setEditedPlayer(prev => {
+            if (!prev) return null;
+            const newStats = { ...prev.stats };
+            delete newStats[statKey];
+            return { ...prev, stats: newStats };
+        });
+        return;
+    }
+
+    let numValue = isFloat ? parseFloat(value.replace(',', '.')) : parseInt(value, 10);
+
+    if (isNaN(numValue)) {
+        return; 
+    }
+
+    if (numValue < 0) {
+        numValue = 0;
+    }
+
+    if (statKey === 'Sofascore' && numValue > 10) {
+        numValue = 10;
+    }
 
     setEditedPlayer(prev => {
         if (!prev) return null;
@@ -552,7 +591,14 @@ const EditPlayerDialog = ({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="jerseyNumber" className="text-right">Dorsal</Label>
-            <Input id="jerseyNumber" type="number" value={editedPlayer.jerseyNumber} onChange={(e) => handleInputChange('jerseyNumber', Number(e.target.value))} className="col-span-3" />
+            <Input 
+                id="jerseyNumber" 
+                type="number" 
+                min="0"
+                value={editedPlayer.jerseyNumber ?? ''} 
+                onChange={(e) => handleInputChange('jerseyNumber', e.target.value)} 
+                className="col-span-3" 
+            />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="nationality" className="text-right">Nacionalidad</Label>
@@ -629,12 +675,14 @@ const EditPlayerDialog = ({
                     {label}
                     </Label>
                     <Input
-                    id={key}
-                    type="number"
-                    step={type === 'float' ? '0.01' : '1'}
-                    value={editedPlayer.stats?.[key] ?? ''}
-                    onChange={(e) => handleStatChange(key, e.target.value)}
-                    className="h-8"
+                        id={key}
+                        type="number"
+                        step={type === 'float' ? '0.01' : '1'}
+                        value={editedPlayer.stats?.[key] ?? ''}
+                        onChange={(e) => handleStatChange(key, e.target.value)}
+                        className="h-8"
+                        min="0"
+                        {...(key === 'Sofascore' && { max: "10" })}
                     />
                 </div>
             ))}
@@ -768,6 +816,27 @@ export default function TeamViewPage() {
         return `${IMAGEKIT_URL_ENDPOINT}/${team.id}/${team.coach.imageUrl}`;
     }, [team]);
 
+    const teamStats = useMemo(() => {
+        if (!team?.players) return null;
+
+        const playersWithAge = team.players
+            .map(p => ({ ...p, age: calculateAge(p.birthDate) }))
+            .filter(p => p.age !== null);
+
+        const totalAge = playersWithAge.reduce((sum, p) => sum + (p.age as number), 0);
+        const averageAge = playersWithAge.length > 0 ? (totalAge / playersWithAge.length).toFixed(1) : 'N/A';
+
+        const foreignPlayers = team.players.filter(p => p.nationality && p.nationality !== 'CO').length;
+        
+        const u20Players = playersWithAge.filter(p => (p.age as number) < 20).length;
+
+        return {
+            totalPlayers: team.players.length,
+            averageAge,
+            foreignPlayers,
+            u20Players,
+        };
+    }, [team?.players]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, user => {
@@ -1035,7 +1104,7 @@ export default function TeamViewPage() {
                 </header>
 
                 <main className="grid grid-cols-1 lg:grid-cols-6 gap-8">
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 space-y-6">
                         {coach && (
                             <Card>
                                 <CardHeader>
@@ -1073,6 +1142,46 @@ export default function TeamViewPage() {
                                         Editar DT
                                     </Button>
                                 </CardFooter>
+                            </Card>
+                        )}
+                        {teamStats && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center text-xl font-headline text-primary">
+                                        <BarChart3 className="mr-3 h-6 w-6" />
+                                        Estadísticas
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3 text-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Users className="h-4 w-4" />
+                                            <span>Jugadores Totales</span>
+                                        </div>
+                                        <span className="font-semibold text-primary">{teamStats.totalPlayers}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Cake className="h-4 w-4" />
+                                            <span>Edad Media</span>
+                                        </div>
+                                        <span className="font-semibold text-primary">{teamStats.averageAge} años</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Globe className="h-4 w-4" />
+                                            <span>Extranjeros</span>
+                                        </div>
+                                        <span className="font-semibold text-primary">{teamStats.foreignPlayers}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Baby className="h-4 w-4" />
+                                            <span>Sub-20</span>
+                                        </div>
+                                        <span className="font-semibold text-primary">{teamStats.u20Players}</span>
+                                    </div>
+                                </CardContent>
                             </Card>
                         )}
                     </div>
@@ -1204,3 +1313,5 @@ export default function TeamViewPage() {
         </div>
     );
 }
+
+    

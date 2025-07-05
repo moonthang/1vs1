@@ -1,9 +1,8 @@
-
 "use client";
 
 import type { Player } from '@/types';
 import Image from 'next/image';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { User, Target, ShieldCheck, Zap, ArrowRightLeft, Dumbbell, ListChecks, Goal, Handshake, Star, RefreshCw, Cake, Euro, Edit, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { IMAGEKIT_URL_ENDPOINT } from '@/lib/imagekit';
@@ -37,7 +36,7 @@ const StatIcon = ({ statName }: { statName: string }) => {
     case 'goles': return <Goal className="w-4 h-4 mr-1 text-green-500" />;
     case 'asistencia': return <Handshake className="w-4 h-4 mr-1 text-teal-500" />;
     case 'sofascore': return <Star className="w-4 h-4 mr-1 text-amber-500" />;
-    case 'arcos en cero': return <ShieldCheck className="w-4 h-4 mr-1 text-gray-500" />;
+    case 'arcos en cero': return <ShieldCheck className="w-4 h-4 mr-1 text-blue-500" />;
     case 'goles recibidos': return <Goal className="w-4 h-4 mr-1 text-red-600" />;
     default: return <User className="w-4 h-4 mr-1 text-gray-500" />;
   }
@@ -53,6 +52,15 @@ const formatValue = (value: number): string => {
     return `${Math.round(value / 1000)} mil`;
   }
   return value.toLocaleString('de-DE');
+};
+
+const getSofascoreBadgeClass = (score: number) => {
+  if (score < 6.0) return 'bg-red-500 text-white';
+  if (score < 6.5) return 'bg-orange-500 text-white';
+  if (score < 7.0) return 'bg-yellow-500 text-black';
+  if (score < 8.0) return 'bg-green-500 text-white';
+  if (score <= 10.0) return 'bg-teal-500 text-white';
+  return 'bg-gray-400 text-white';
 };
 
 export function PlayerCard({ player, onSelect, isSelected, showStats = false, isUnavailable = false, onEdit, onMove, onDelete }: PlayerCardProps) {
@@ -99,117 +107,129 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
       onKeyDown={isUnavailable || !onSelect ? undefined : (e) => (e.key === 'Enter' || e.key === ' ') && onSelect(player)}
     >
       {showStats ? (
-        <div className="grid grid-cols-10 gap-x-2 p-2 items-start h-full">
-          <div className="col-span-3 flex-shrink-0 relative h-full">
-            <Image
-              key={finalSrc}
-              src={finalSrc}
-              alt={player.name}
-              width={120} 
-              height={120}
-              className="rounded-md object-cover w-full h-full border border-muted"
-              onError={() => setHasError(true)}
-            />
-            {player.needsPhotoUpdate && (
-                <div className="absolute bottom-1 right-1 left-1 z-10">
-                    <Badge variant="destructive" className="w-full justify-center text-[10px] px-1 py-0.5 animate-pulse leading-tight">
-                        <RefreshCw className="w-2.5 h-2.5 mr-1" />
-                        Actualizar Foto
-                    </Badge>
+         <CardContent className="p-2 h-full">
+            <div className="grid grid-cols-10 gap-x-2 items-start h-full">
+                <div className="col-span-3 flex-shrink-0 relative h-full">
+                    <Image
+                        key={finalSrc}
+                        src={finalSrc}
+                        alt={player.name}
+                        width={120} 
+                        height={120}
+                        className="rounded-md object-cover w-full h-full border border-muted"
+                        onError={() => setHasError(true)}
+                    />
+                    {player.needsPhotoUpdate && (
+                        <div className="absolute bottom-1 right-1 left-1 z-10">
+                            <Badge variant="destructive" className="w-full justify-center text-[10px] px-1 py-0.5 animate-pulse leading-tight">
+                                <RefreshCw className="w-2.5 h-2.5 mr-1" />
+                                Actualizar Foto
+                            </Badge>
+                        </div>
+                    )}
                 </div>
-            )}
-          </div>
-          <div className="col-span-3 flex flex-col justify-start">
-            <CardTitle className="text-sm font-headline leading-tight mb-1">{player.name}</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              {player.position === 'DT' ? player.position : `#${player.jerseyNumber} - ${player.position}`}
-            </p>
-            {country && (
-                <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-                    <Image src={country.flag} alt={country.label} width={16} height={12} className="border border-muted" />
-                    <span>{country.label}</span>
+                <div className="col-span-3 flex flex-col justify-start">
+                    <CardTitle className="text-sm font-headline leading-tight mb-1">{player.name}</CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                    {player.position === 'DT' ? player.position : `#${player.jerseyNumber} - ${player.position}`}
+                    </p>
+                    {country && (
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                            <Image src={country.flag} alt={country.label} width={16} height={12} className="border border-muted" />
+                            <span>{country.label}</span>
+                        </div>
+                    )}
+                    {age !== null && (
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                            <Cake className="w-3.5 h-3.5" />
+                            <span>{age} años</span>
+                        </div>
+                    )}
+                    {player.value != null && (
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                            <Euro className="w-3.5 h-3.5" />
+                            <span>{formatValue(player.value)}</span>
+                        </div>
+                    )}
                 </div>
-            )}
-            {age !== null && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-                  <Cake className="w-3.5 h-3.5" />
-                  <span>{age} años</span>
-              </div>
-            )}
-            {player.value != null && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-                  <Euro className="w-3.5 h-3.5" />
-                  <span>{formatValue(player.value)}</span>
-              </div>
-            )}
-          </div>
-          <div className="col-span-4 flex flex-col h-full">
-            <div className="space-y-0.5 text-xs flex-grow">
-              {preferredStatsOrder.map((statName) => {
-                const isGoalkeeper = player.position === 'Portero';
-                const goalkeeperStats: (keyof Player['stats'])[] = ['Arcos en cero', 'Goles recibidos'];
+                <div className="col-span-4 flex flex-col h-full">
+                    <div className="space-y-0.5 text-xs flex-grow">
+                    {preferredStatsOrder.map((statName) => {
+                        const isGoalkeeper = player.position === 'Portero';
+                        const goalkeeperStats: (keyof Player['stats'])[] = ['Arcos en cero', 'Goles recibidos'];
 
-                if (!isGoalkeeper && goalkeeperStats.includes(statName)) {
-                  return null;
-                }
+                        if (!isGoalkeeper && goalkeeperStats.includes(statName)) {
+                        return null;
+                        }
 
-                const statValue = player.stats?.[statName];
-                
-                return (
-                  <div key={statName} className="flex items-center">
-                    <StatIcon statName={statName as string} />
-                    <span className="capitalize truncate">{statName}:</span>
-                    <span className="ml-auto font-semibold">
-                      {statValue ?? '--'}
-                    </span>
-                  </div>
-                );
-              })}
+                        const statValue = player.stats?.[statName];
+
+                        if (statValue === undefined || statValue === null) {
+                            return null;
+                        }
+
+                        return (
+                        <div key={statName} className="flex items-center">
+                            <StatIcon statName={statName as string} />
+                            <span className="capitalize truncate">{statName}:</span>
+                            <span className="ml-auto font-semibold">
+                            {statName === 'Sofascore' && typeof statValue === 'number' && statValue > 0 ? (
+                                <span className={`px-1.5 py-0.5 rounded text-xs ${getSofascoreBadgeClass(statValue)}`}>
+                                {statValue.toFixed(2)}
+                                </span>
+                            ) : (
+                                <span className="text-primary">{statValue}</span>
+                            )}
+                            </span>
+                        </div>
+                        );
+                    })}
+                    </div>
+                    {isSelected && (onEdit || onMove || onDelete) && (
+                        <div className="mt-auto pt-2 flex justify-end gap-1">
+                            <TooltipProvider>
+                                {onEdit && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Editar Jugador</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )}
+                                {onMove && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onMove(); }}>
+                                                <ArrowRightLeft className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Mover Jugador</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )}
+                                {onDelete && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Eliminar Jugador</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )}
+                            </TooltipProvider>
+                        </div>
+                    )}
+                </div>
             </div>
-            {isSelected && (onEdit || onMove || onDelete) && (
-              <div className="mt-auto pt-2 flex justify-end gap-1">
-                  <TooltipProvider>
-                      {onEdit && (
-                          <Tooltip>
-                              <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-                                      <Edit className="h-4 w-4" />
-                                  </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                  <p>Editar Jugador</p>
-                              </TooltipContent>
-                          </Tooltip>
-                      )}
-                      {onMove && (
-                          <Tooltip>
-                              <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onMove(); }}>
-                                      <ArrowRightLeft className="h-4 w-4" />
-                                  </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                  <p>Mover Jugador</p>
-                              </TooltipContent>
-                          </Tooltip>
-                      )}
-                      {onDelete && (
-                          <Tooltip>
-                              <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-                                      <Trash2 className="h-4 w-4" />
-                                  </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                  <p>Eliminar Jugador</p>
-                              </TooltipContent>
-                          </Tooltip>
-                      )}
-                  </TooltipProvider>
-              </div>
-            )}
-          </div>
-        </div>
+         </CardContent>
       ) : (
         <CardHeader className="p-4 flex-grow">
           <div className="flex items-center space-x-3">

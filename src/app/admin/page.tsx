@@ -472,20 +472,38 @@ export default function AdminPage() {
     const handleDeleteTeam = async () => {
         if (!teamToDelete) return;
         try {
+            const teamRef = doc(db, 'equipos', teamToDelete.id);
+            const teamSnapshot = await getDoc(teamRef);
+            if (!teamSnapshot.exists()) {
+                toast({ variant: "destructive", title: "Error", description: "El equipo ya no existe." });
+                setTeamToDelete(null);
+                return;
+            }
+            const teamData = teamSnapshot.data();
+            const playerImages = teamData.players
+                .map((p: any) => p.imageFileId)
+                .filter(Boolean);
+            const coachImage = teamData.coach?.imageFileId;
+
             if (teamToDelete.logoFileId) {
-                const deleteResult = await deleteImage(teamToDelete.logoFileId);
-                if (!deleteResult.success) {
-                    toast({ variant: "destructive", title: "Error", description: `No se pudo eliminar la imagen del equipo. ${deleteResult.error || ''}` });
-                    setTeamToDelete(null);
-                    return;
+                await deleteImage(teamToDelete.logoFileId);
+            }
+            if (coachImage) {
+                await deleteImage(coachImage);
+            }
+            if (playerImages.length > 0) {
+                for (const fileId of playerImages) {
+                    await deleteImage(fileId);
                 }
             }
-            await deleteDoc(doc(db, 'equipos', teamToDelete.id));
+            
+            await deleteDoc(teamRef);
+
             setTeams(currentTeams => currentTeams.filter(t => t.id !== teamToDelete.id));
-            toast({ title: 'Equipo Eliminado', description: `${teamToDelete.name} ha sido eliminado de la base de datos.` });
+            toast({ title: 'Equipo Eliminado', description: `${teamToDelete.name} y todas sus imágenes han sido eliminados.` });
         } catch (error) {
             console.error("Error deleting team: ", error);
-            toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el equipo." });
+            toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el equipo por completo." });
         } finally {
             setTeamToDelete(null);
         }
@@ -606,7 +624,7 @@ export default function AdminPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col items-center p-4 md:p-8">
-            <div className="w-full max-w-6xl">
+            <div className="w-full max-w-7xl">
                 <header className="mb-8 flex flex-col items-center gap-4">
                     <div className="flex w-full items-center justify-between">
                         <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
@@ -648,9 +666,9 @@ export default function AdminPage() {
                     </div>
                 </header>
 
-                <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {isLoading ? (
-                        Array.from({ length: 4 }).map((_, i) => (
+                        Array.from({ length: 8 }).map((_, i) => (
                            <Card key={i}>
                                <CardHeader><Skeleton className="h-8 w-3/4" /></CardHeader>
                                <CardContent><Skeleton className="h-4 w-full" /></CardContent>
@@ -662,7 +680,7 @@ export default function AdminPage() {
                            </Card>
                         ))
                     ) : teams.length === 0 ? (
-                        <Card className="md:col-span-2 lg:col-span-3 text-center p-8">
+                        <Card className="sm:col-span-2 md:col-span-3 lg:col-span-4 text-center p-8">
                            <CardTitle>No hay equipos en la base de datos.</CardTitle>
                            <CardContent className="mt-4">
                                <p>Parece que tu base de datos está vacía.</p>
