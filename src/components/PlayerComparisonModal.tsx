@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Player } from '@/types';
@@ -19,9 +20,10 @@ interface PlayerComparisonModalProps {
   positionSlotKey: string | null;
 }
 
-type SortCriteria = 'Partidos' | 'Sofascore' | 'Goles' | 'Asistencia' | 'Arcos en cero';
+type SortCriteria = 'Partidos' | 'Sofascore' | 'Goles' | 'Asistencia' | 'Arcos en cero' | 'Valor';
 
 const sortOptions: { value: SortCriteria; label: string }[] = [
+  { value: 'Valor', label: 'Valor de Mercado' },
   { value: 'Partidos', label: 'Partidos Jugados' },
   { value: 'Sofascore', label: 'Sofascore Rating' },
   { value: 'Goles', label: 'Goles' },
@@ -33,7 +35,7 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
   const { teamA, teamB, getEligiblePlayersForSlot, setPlayerInLineup, idealLineup, clearPlayerFromLineup, isComparisonMode } = useLineupStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPlayerForSlot, setSelectedPlayerForSlot] = useState<Player | null>(null);
-  const [sortCriteria, setSortCriteria] = useState<SortCriteria>('Partidos');
+  const [sortCriteria, setSortCriteria] = useState<SortCriteria>('Valor');
 
   useEffect(() => {
     if (isOpen && positionSlotKey) {
@@ -41,7 +43,7 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
     }
     if (!isOpen) {
       setSearchTerm('');
-      setSortCriteria('Partidos'); 
+      setSortCriteria('Valor'); 
     }
   }, [isOpen, positionSlotKey, idealLineup]);
 
@@ -75,7 +77,13 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
       return players || [];
     }
     return [...players].sort((a, b) => {
-      const statA = a.stats?.[criteria] ?? (criteria === 'Sofascore' ? 0 : -Infinity); 
+      if (criteria === 'Valor') {
+        const valueA = a.value ?? -Infinity;
+        const valueB = b.value ?? -Infinity;
+        return valueB - valueA;
+      }
+
+      const statA = a.stats?.[criteria] ?? (criteria === 'Sofascore' ? 0 : -Infinity);
       const statB = b.stats?.[criteria] ?? (criteria === 'Sofascore' ? 0 : -Infinity);
       
       return (statB as number) - (statA as number);
@@ -129,7 +137,7 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
     if (players.length === 0) {
        return (
          <p className="text-center text-muted-foreground py-4">
-           {searchTerm ? `No se encontraron jugadores de ${teamName} con "${searchTerm}".` : `No hay jugadores elegibles de ${teamName} para esta posición y criterio.`}
+           {searchTerm ? `No se encontraron jugadores de ${teamName} con "${searchTerm}".` : `No hay jugadores para mostrar.`}
          </p>
        );
     }
@@ -181,14 +189,21 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] bg-card p-4">
+      <DialogContent 
+        className="sm:max-w-[600px] bg-card p-4"
+        onOpenAutoFocus={(e) => {
+          if ('ontouchstart' in window) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="font-headline text-primary pr-8">
             {modalTitle}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col md:flex-row gap-2 my-3 items-stretch md:items-end">
+        <div className="flex flex-row gap-2 my-3 items-center">
           <div className="flex-grow">
             <Label htmlFor="search-player" className="sr-only">Buscar Jugador</Label>
             <Input
@@ -202,9 +217,9 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
           </div>
           {!isCoachSlot && (
             <div className="flex-shrink-0">
-              <Label htmlFor="sort-criteria" className="block text-xs text-muted-foreground mb-1">Ordenar por:</Label>
+              <Label htmlFor="sort-criteria" className="sr-only">Ordenar por:</Label>
               <Select value={sortCriteria} onValueChange={(value) => setSortCriteria(value as SortCriteria)}>
-                <SelectTrigger id="sort-criteria" className="w-full md:w-[180px]">
+                <SelectTrigger id="sort-criteria" className="w-[180px]">
                   <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
                 <SelectContent>
@@ -254,13 +269,15 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
             </ScrollArea>
         )}
 
-        <DialogFooter className="mt-3">
-          {selectedPlayerForSlot && (
-            <Button variant="destructive" onClick={handleRemovePlayer} className="mr-auto">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Quitar a {selectedPlayerForSlot.name}
-            </Button>
-          )}
+        <DialogFooter className="mt-3 flex-row justify-between">
+          <div>
+            {selectedPlayerForSlot && (
+              <Button variant="destructive" onClick={handleRemovePlayer}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Quitar a {selectedPlayerForSlot.name}
+              </Button>
+            )}
+          </div>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
         </DialogFooter>
       </DialogContent>

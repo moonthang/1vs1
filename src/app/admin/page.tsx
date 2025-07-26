@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, PlusCircle, Eye, Edit, Trash2, Loader2, UploadCloud, Download, X, LogOut } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Eye, Edit, Trash2, Loader2, UploadCloud, Download, X, LogOut, Menu, CalendarClock } from 'lucide-react';
 import type { TeamInfo } from '@/types';
 import {
   Dialog,
@@ -27,15 +27,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { db, auth } from '@/lib/firebase';
-import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { uploadImage, deleteImage } from '@/actions/uploadActions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 
 const EditTeamDialog = ({
   team,
@@ -87,30 +95,45 @@ const EditTeamDialog = ({
     setIsSaving(true);
     let updatedData: Partial<TeamInfo> = { name, primaryColor, secondaryColor };
 
-    if (imageAction === 'replace' && newFileData) {
-        if (team.logoFileId) {
-            await deleteImage(team.logoFileId);
+    try {
+        if (imageAction === 'replace' && newFileData) {
+            if (team.logoFileId) {
+                const deleteResult = await deleteImage(team.logoFileId);
+                if (!deleteResult.success) {
+                    toast({ variant: 'destructive', title: 'Error de borrado', description: `No se pudo borrar el logo anterior. ${deleteResult.error || ''}` });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+            const uploadResult = await uploadImage(newFileData, `${team.id}-logo.png`, `/${team.id}`);
+            if (uploadResult.success && uploadResult.url && uploadResult.fileId) {
+                updatedData.logoUrl = uploadResult.url;
+                updatedData.logoFileId = uploadResult.fileId;
+            } else {
+                toast({ variant: 'destructive', title: 'Error de Subida', description: uploadResult.error || 'No se pudo subir el nuevo logo.' });
+                setIsSaving(false);
+                return;
+            }
+        } else if (imageAction === 'remove') {
+            if (team.logoFileId) {
+                const deleteResult = await deleteImage(team.logoFileId);
+                if (!deleteResult.success) {
+                    toast({ variant: 'destructive', title: 'Error de borrado', description: `No se pudo borrar el logo. ${deleteResult.error || ''}` });
+                    setIsSaving(false);
+                    return;
+                }
+            }
+            updatedData.logoUrl = '';
+            updatedData.logoFileId = '';
         }
-        const uploadResult = await uploadImage(newFileData, `${team.id}-logo.png`, `/${team.id}`);
-        if (uploadResult.success && uploadResult.url && uploadResult.fileId) {
-            updatedData.logoUrl = uploadResult.url;
-            updatedData.logoFileId = uploadResult.fileId;
-        } else {
-            toast({ variant: 'destructive', title: 'Error de Subida', description: uploadResult.error });
-            setIsSaving(false);
-            return;
-        }
-    } else if (imageAction === 'remove') {
-        if (team.logoFileId) {
-            await deleteImage(team.logoFileId);
-        }
-        updatedData.logoUrl = '';
-        updatedData.logoFileId = '';
-    }
     
-    onSave(team.id, updatedData);
-    setIsSaving(false);
-    onClose();
+        onSave(team.id, updatedData);
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error inesperado', description: 'Ocurrió un error al guardar.' });
+    } finally {
+        setIsSaving(false);
+        onClose();
+    }
   };
 
   const handleClose = () => {
@@ -162,7 +185,7 @@ const EditTeamDialog = ({
                       </Button>
                   </div>
               ) : (
-                  <Input id="team-logo" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, image/svg+xml" />
+                  <Input id="team-logo" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, image/svg+xml, image/webp" />
               )}
             </div>
           </div>
@@ -250,26 +273,28 @@ const AddTeamDialog = ({ isOpen, onClose, onSave, teams }: { isOpen: boolean; on
     };
 
     const handleSave = async () => {
-        if (!name || !newFileData) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Por favor, introduce un nombre y selecciona un logo.' });
+        if (!name) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Por favor, introduce al menos un nombre.' });
             return;
         }
         setIsSaving(true);
         const teamId = getNextAvailableTeamId();
         
-        const uploadResult = await uploadImage(newFileData, `${teamId}-logo.png`, `/${teamId}`);
-
-        if (!uploadResult.success || !uploadResult.url || !uploadResult.fileId) {
-            toast({ variant: 'destructive', title: 'Error de subida', description: uploadResult.error });
-            setIsSaving(false);
-            return;
+        let uploadResult: any | null = null;
+        if (newFileData) {
+            uploadResult = await uploadImage(newFileData, `${teamId}-logo.png`, `/${teamId}`);
+            if (!uploadResult.success || !uploadResult.url || !uploadResult.fileId) {
+                toast({ variant: 'destructive', title: 'Error de subida', description: uploadResult.error || 'No se pudo subir el logo del equipo.' });
+                setIsSaving(false);
+                return;
+            }
         }
 
         const newTeam: TeamInfo = {
             id: teamId,
             name: name,
-            logoUrl: uploadResult.url,
-            logoFileId: uploadResult.fileId,
+            logoUrl: uploadResult?.url || '',
+            logoFileId: uploadResult?.fileId,
             primaryColor,
             secondaryColor,
         };
@@ -293,9 +318,6 @@ const AddTeamDialog = ({ isOpen, onClose, onSave, teams }: { isOpen: boolean; on
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Agregar Nuevo Equipo</DialogTitle>
-                    <DialogDescription>
-                        Ingresa los detalles del nuevo equipo.
-                    </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     {newFileData && (
@@ -315,7 +337,7 @@ const AddTeamDialog = ({ isOpen, onClose, onSave, teams }: { isOpen: boolean; on
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="new-team-logo" className="text-right">Logo</Label>
                         <div className="col-span-3">
-                            <Input id="new-team-logo" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, image/svg+xml" />
+                            <Input id="new-team-logo" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, image/svg+xml, image/webp" />
                         </div>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -386,6 +408,9 @@ export default function AdminPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importData, setImportData] = useState<{ teams: any[] } | null>(null);
     const [isImporting, setIsImporting] = useState(false);
+    const [importDate, setImportDate] = useState<string | null>(null);
+    const [isUpdateDateModalOpen, setUpdateDateModalOpen] = useState(false);
+    const [isUpdatingDate, setIsUpdatingDate] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, user => {
@@ -452,15 +477,44 @@ export default function AdminPage() {
     const handleDeleteTeam = async () => {
         if (!teamToDelete) return;
         try {
-            if (teamToDelete.logoFileId) {
-                await deleteImage(teamToDelete.logoFileId);
+            const teamRef = doc(db, 'equipos', teamToDelete.id);
+            const teamSnapshot = await getDoc(teamRef);
+            if (!teamSnapshot.exists()) {
+                toast({ variant: "destructive", title: "Error", description: "El equipo ya no existe." });
+                setTeamToDelete(null);
+                return;
             }
-            await deleteDoc(doc(db, 'equipos', teamToDelete.id));
-            setTeams(currentTeams => currentTeams.filter(t => t.id !== teamToDelete.id));
-            toast({ title: 'Equipo Eliminado', description: `${teamToDelete.name} ha sido eliminado de la base de datos.` });
+            const teamData = teamSnapshot.data();
+            const playerImages = (teamData.players || [])
+                .map((p: any) => p.imageFileId)
+                .filter(Boolean);
+            const coachImage = teamData.coach?.imageFileId;
+    
+            const imageDeletionPromises = [];
+            if (teamToDelete.logoFileId) {
+                imageDeletionPromises.push(deleteImage(teamToDelete.logoFileId));
+            }
+            if (coachImage) {
+                imageDeletionPromises.push(deleteImage(coachImage));
+            }
+            for (const fileId of playerImages) {
+                imageDeletionPromises.push(deleteImage(fileId));
+            }
+            
+            const results = await Promise.allSettled(imageDeletionPromises);
+            results.forEach(result => {
+                if (result.status === 'rejected') {
+                    console.error('Failed to delete an image, but proceeding with team deletion:', result.reason);
+                }
+            });
+            
+            await deleteDoc(teamRef);
+    
+            setTeams(currentTeams => currentTeams.filter(t => t.id !== teamToDelete!.id));
+            toast({ title: 'Equipo Eliminado', description: `${teamToDelete.name} y todas sus imágenes han sido eliminados.` });
         } catch (error) {
             console.error("Error deleting team: ", error);
-            toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el equipo." });
+            toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el equipo por completo." });
         } finally {
             setTeamToDelete(null);
         }
@@ -485,12 +539,17 @@ export default function AdminPage() {
         try {
             const querySnapshot = await getDocs(collection(db, 'equipos'));
             const teamsData = querySnapshot.docs.map(teamDoc => ({ id: teamDoc.id, ...teamDoc.data() }));
+            
+            const metaDocRef = doc(db, 'app_meta', 'info');
+            const metaDoc = await getDoc(metaDocRef);
+            const metaData = metaDoc.exists() ? metaDoc.data() : {};
 
             const backupData = {
-                version: '1.0',
+                version: '1.1',
                 createdAt: new Date().toISOString(),
                 data: {
                     teams: teamsData,
+                    meta: metaData,
                 }
             };
 
@@ -529,12 +588,14 @@ export default function AdminPage() {
 
                 if (parsedData && parsedData.data && Array.isArray(parsedData.data.teams)) {
                     setImportData(parsedData.data);
+                    setImportDate(parsedData.createdAt || new Date().toISOString());
                 } else {
                     throw new Error("El archivo JSON no tiene el formato esperado.");
                 }
             } catch (error: any) {
-                toast({ variant: "destructive", title: "Error de Importación", description: error.message || "El archivo no es un JSON válido." });
+                toast({ variant: "destructive", title: "Error de Importación", description: "El archivo no es un JSON válido o tiene un formato incorrecto." });
                 setImportData(null);
+                setImportDate(null);
             } finally {
                 if (event.target) event.target.value = '';
             }
@@ -546,16 +607,19 @@ export default function AdminPage() {
         if (!importData) return;
         setIsImporting(true);
         try {
-            const writePromises = importData.teams.map(team => {
+            const teamPromises = importData.teams.map(team => {
                 const { id, ...teamData } = team;
                 if (!id) return Promise.resolve();
                 const teamRef = doc(db, 'equipos', id);
                 return setDoc(teamRef, teamData);
             });
 
-            await Promise.all(writePromises);
+            const metaRef = doc(db, 'app_meta', 'info');
+            const metaPromise = setDoc(metaRef, { lastUpdated: serverTimestamp() }, { merge: true });
+
+            await Promise.all([...teamPromises, metaPromise]);
             
-            toast({ title: 'Importación Exitosa', description: 'Los datos de los equipos se han restaurado desde el archivo.' });
+            toast({ title: 'Importación Exitosa', description: 'Los datos de los equipos se han restaurado y la fecha de actualización se ha establecido.' });
             await fetchTeams();
         } catch (error) {
             console.error("Error importing data: ", error);
@@ -563,6 +627,22 @@ export default function AdminPage() {
         } finally {
             setIsImporting(false);
             setImportData(null);
+            setImportDate(null);
+        }
+    };
+
+    const handleUpdateDate = async () => {
+        setIsUpdatingDate(true);
+        try {
+            const metaRef = doc(db, 'app_meta', 'info');
+            await setDoc(metaRef, { lastUpdated: serverTimestamp() }, { merge: true });
+            toast({ title: 'Fecha Actualizada', description: 'La fecha de actualización de las plantillas se ha establecido a hoy.' });
+        } catch (error) {
+            console.error("Error updating date: ", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo actualizar la fecha." });
+        } finally {
+            setIsUpdatingDate(false);
+            setUpdateDateModalOpen(false);
         }
     };
 
@@ -581,39 +661,55 @@ export default function AdminPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col items-center p-4 md:p-8">
-            <div className="w-full max-w-6xl">
+            <div className="w-full max-w-7xl">
                 <header className="mb-8 flex flex-col items-center gap-4">
-                    <div className="relative flex w-full items-center justify-center">
-                        <Button variant="ghost" size="icon" className="absolute left-0" onClick={() => router.push('/')}>
+                    <div className="flex w-full items-center justify-between">
+                        <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
                             <ArrowLeft />
                         </Button>
-                        <h1 className="text-3xl font-bold text-primary text-center sm:text-4xl px-12">
+                        <h1 className="text-3xl font-bold text-primary text-center sm:text-4xl">
                             Panel de Administración
                         </h1>
+                        <div className="w-10" />
                     </div>
                     <div className="flex w-full justify-center gap-2 flex-wrap">
                         <Button onClick={() => setAddModalOpen(true)}>
                             <PlusCircle className="mr-2 h-5 w-5" />
                             Agregar Equipo
                         </Button>
-                        <Button variant="outline" onClick={handleImportClick}>
-                            <UploadCloud className="mr-2 h-5 w-5" />
-                            Importar
-                        </Button>
-                        <Button variant="outline" onClick={handleExport}>
-                            <Download className="mr-2 h-5 w-5" />
-                            Exportar
-                        </Button>
-                        <Button variant="destructive" onClick={handleSignOut}>
-                            <LogOut className="mr-2 h-5 w-5" />
-                            Cerrar Sesión
-                        </Button>
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <Menu className="h-5 w-5" />
+                                    <span className="sr-only">Abrir menú de acciones</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleImportClick}>
+                                    <UploadCloud className="mr-2 h-4 w-4" />
+                                    <span>Importar</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleExport}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Exportar</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setUpdateDateModalOpen(true)}>
+                                    <CalendarClock className="mr-2 h-4 w-4" />
+                                    <span>Actualización</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    <span>Cerrar Sesión</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </header>
 
-                <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <main className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {isLoading ? (
-                        Array.from({ length: 4 }).map((_, i) => (
+                        Array.from({ length: 8 }).map((_, i) => (
                            <Card key={i}>
                                <CardHeader><Skeleton className="h-8 w-3/4" /></CardHeader>
                                <CardContent><Skeleton className="h-4 w-full" /></CardContent>
@@ -625,7 +721,7 @@ export default function AdminPage() {
                            </Card>
                         ))
                     ) : teams.length === 0 ? (
-                        <Card className="md:col-span-2 lg:col-span-3 text-center p-8">
+                        <Card className="sm:col-span-2 md:col-span-3 lg:col-span-4 text-center p-8">
                            <CardTitle>No hay equipos en la base de datos.</CardTitle>
                            <CardContent className="mt-4">
                                <p>Parece que tu base de datos está vacía.</p>
@@ -636,9 +732,12 @@ export default function AdminPage() {
                         teams.map((team) => (
                             <Card key={team.id} className="flex flex-col">
                                 <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-                                    <div className="w-4 h-12 rounded-full" style={{ backgroundColor: team.primaryColor || '#ccc' }}></div>
+                                    <div 
+                                        className="w-4 h-12 rounded-full border border-border" 
+                                        style={{ background: `linear-gradient(to bottom, ${team.primaryColor || '#ccc'} 50%, ${team.secondaryColor || '#ccc'} 50%)` }}
+                                    ></div>
                                     <Image 
-                                        src={team.logoUrl} 
+                                        src={team.logoUrl || `https://placehold.co/48x48.png?text=${team.name.charAt(0)}`} 
                                         alt={`${team.name} logo`} 
                                         width={48} 
                                         height={48}
@@ -656,14 +755,10 @@ export default function AdminPage() {
                                             <TooltipTrigger asChild>
                                                 <Button
                                                     variant="outline"
-                                                    size="sm"
-                                                    className="justify-center group flex items-center w-10 hover:w-24 h-10 transition-all duration-300 overflow-hidden"
+                                                    size="icon"
                                                     onClick={() => handleViewTeam(team.id)}
                                                 >
-                                                    <Eye className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-2" />
-                                                    <span className="opacity-0 w-0 group-hover:opacity-100 group-hover:w-auto group-hover:ml-2 transition-all duration-300 overflow-hidden whitespace-nowrap">
-                                                        Ver
-                                                    </span>
+                                                    <Eye className="h-4 w-4" />
                                                 </Button>
                                             </TooltipTrigger>
                                             <TooltipContent>
@@ -675,14 +770,10 @@ export default function AdminPage() {
                                             <TooltipTrigger asChild>
                                                 <Button
                                                     variant="outline"
-                                                    size="sm"
-                                                    className="justify-center group flex items-center w-10 hover:w-28 h-10 transition-all duration-300 overflow-hidden"
+                                                    size="icon"
                                                     onClick={() => handleOpenEditModal(team)}
                                                 >
-                                                    <Edit className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-2" />
-                                                    <span className="opacity-0 w-0 group-hover:opacity-100 group-hover:w-auto group-hover:ml-2 transition-all duration-300 overflow-hidden whitespace-nowrap">
-                                                        Editar
-                                                    </span>
+                                                    <Edit className="h-4 w-4" />
                                                 </Button>
                                             </TooltipTrigger>
                                             <TooltipContent>
@@ -696,14 +787,10 @@ export default function AdminPage() {
                                                     <AlertDialogTrigger asChild>
                                                         <Button
                                                             variant="destructive"
-                                                            size="sm"
-                                                            className="justify-center group flex items-center w-10 hover:w-32 h-10 transition-all duration-300 overflow-hidden"
+                                                            size="icon"
                                                             onClick={() => setTeamToDelete(team)}
                                                         >
-                                                            <Trash2 className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-2" />
-                                                            <span className="opacity-0 w-0 group-hover:opacity-100 group-hover:w-auto group-hover:ml-2 transition-all duration-300 overflow-hidden whitespace-nowrap">
-                                                                Eliminar
-                                                            </span>
+                                                            <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </AlertDialogTrigger>
                                                 </TooltipTrigger>
@@ -760,7 +847,8 @@ export default function AdminPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirmar Importación</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Estás a punto de sobrescribir los datos de los equipos existentes con el contenido de este archivo. Esta acción no se puede deshacer. ¿Deseas continuar?
+                            Estás a punto de sobrescribir los datos con el contenido de este archivo. Esto también establecerá la fecha de hoy como la "Última Actualización" de las plantillas.
+                            {importDate && <p className="text-xs mt-2 text-muted-foreground">Fecha del archivo: {new Date(importDate).toLocaleString()}</p>}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -772,6 +860,24 @@ export default function AdminPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <AlertDialog open={isUpdateDateModalOpen} onOpenChange={setUpdateDateModalOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Actualizar Fecha de Plantillas</AlertDialogTitle>
+                        <AlertDialogDescription>
+                           Esto establecerá la fecha de hoy como la última fecha de actualización de las plantillas. Esta fecha será visible para todos los usuarios. ¿Deseas continuar?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isUpdatingDate}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleUpdateDate} disabled={isUpdatingDate}>
+                             {isUpdatingDate ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Confirmar y Actualizar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <ScrollToTopButton />
         </div>
     );
 }

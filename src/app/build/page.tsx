@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarClock } from 'lucide-react';
 import type { TeamInfo } from '@/types';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 
 function TeamSelectionCard({
   team,
@@ -49,26 +50,35 @@ export default function BuildPage() {
   const [teams, setTeams] = useState<TeamInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTeams = async () => {
+    const fetchTeamsAndMeta = async () => {
       setIsLoading(true);
       try {
-        const querySnapshot = await getDocs(collection(db, "equipos"));
-        const teamsData = querySnapshot.docs.map(doc => ({
+        const teamsQuerySnapshot = await getDocs(collection(db, "equipos"));
+        const teamsData = teamsQuerySnapshot.docs.map(doc => ({
           id: doc.id,
           name: doc.data().name,
           logoUrl: doc.data().logoUrl,
           primaryColor: doc.data().primaryColor,
         })) as TeamInfo[];
         setTeams(teamsData);
+        
+        const metaDocRef = doc(db, 'app_meta', 'info');
+        const metaDoc = await getDoc(metaDocRef);
+        if (metaDoc.exists() && metaDoc.data().lastUpdated) {
+          const timestamp = metaDoc.data().lastUpdated as Timestamp;
+          setLastUpdated(timestamp.toDate().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }));
+        }
+
       } catch (error) {
-        console.error("Error fetching teams: ", error);
+        console.error("Error fetching data: ", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchTeams();
+    fetchTeamsAndMeta();
   }, []);
 
   const handleSelectTeam = (id: string) => {
@@ -83,12 +93,23 @@ export default function BuildPage() {
   
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 md:p-8">
-      <header className="text-center mb-8 relative w-full max-w-4xl">
-        <Button variant="ghost" size="icon" className="absolute left-0 top-1/2 -translate-y-1/2" onClick={() => router.push('/')}>
-            <ArrowLeft />
-        </Button>
-        <h1 className="text-4xl font-bold text-primary">Arma tu Equipo</h1>
-        <p className="text-muted-foreground mt-2">Selecciona un equipo para armar su alineación.</p>
+      <header className="mb-8 flex w-full max-w-4xl flex-col items-center">
+        <div className="flex w-full items-center justify-between">
+            <Button variant="ghost" size="icon" onClick={() => router.push('/')} className="text-primary hover:bg-transparent hover:text-primary">
+                <ArrowLeft />
+            </Button>
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-primary">Arma tu Equipo</h1>
+              <p className="text-muted-foreground mt-2">Selecciona un equipo para armar su alineación.</p>
+            </div>
+            <div className="w-10" />
+        </div>
+        {lastUpdated && (
+            <div className="mt-4 text-sm text-muted-foreground flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full">
+                <CalendarClock className="h-4 w-4" />
+                <span>Plantillas actualizadas por última vez el: <strong>{lastUpdated}</strong></span>
+            </div>
+        )}
       </header>
 
       <main className="w-full max-w-4xl">
@@ -130,6 +151,7 @@ export default function BuildPage() {
       <footer className="mt-12 text-center text-sm text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} 1vs1 FutDraft.</p>
       </footer>
+      <ScrollToTopButton />
     </div>
   );
 }

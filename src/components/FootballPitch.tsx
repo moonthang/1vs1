@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from 'react';
 import { useLineupStore } from '@/store/lineupStore';
 import { PlayerSlot } from './PlayerSlot';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -30,7 +29,7 @@ export function FootballPitch({ onSlotClick }: FootballPitchProps) {
 
   return (
     <div id="football-pitch-and-bench-container" className="w-full flex flex-col items-center pt-4">
-      <Card className="w-full aspect-[4/5] max-w-xl mx-auto bg-green-600 border-4 border-white/50 shadow-2xl rounded-lg overflow-hidden">
+      <Card className="w-full aspect-[4/5] max-w-3xl mx-auto bg-green-600 border-4 border-white/50 shadow-2xl rounded-lg overflow-hidden">
         <CardContent className="relative w-full h-full p-0">
           
           {/* Elementos para dibujar las líneas del campo de fútbol */}
@@ -56,7 +55,7 @@ export function FootballPitch({ onSlotClick }: FootballPitchProps) {
       </Card>
       
       {isBenchVisible && (
-        <Card className="w-full max-w-xl mt-4 py-2 bg-card rounded-lg shadow-md">
+        <Card className="w-full max-w-3xl mt-4 py-2 bg-card rounded-lg shadow-md">
           <CardHeader className="p-2 pt-0 pb-2">
               <CardTitle className="text-center text-primary font-headline text-base">Banquillo</CardTitle>
           </CardHeader>

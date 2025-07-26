@@ -51,3 +51,34 @@ export async function deleteImage(fileId: string): Promise<{ success: boolean, e
     return { success: false, error: error.message || 'Failed to delete image.' };
   }
 }
+
+export async function moveImage(sourceFileId: string, destinationFolder: string, newFileName: string): Promise<UploadResponse> {
+  const imagekit = getImageKitClient();
+  if (!imagekit) {
+    return { success: false, error: 'ImageKit SDK is not initialized on the server.' };
+  }
+
+  try {
+    // ImageKit doesn't have a direct "move and rename" in one step via SDK's simpler methods.
+    // The typical approach is copy -> delete.
+    // 1. Get details of the source file to get its URL
+    const sourceFileDetails = await imagekit.getFileDetails(sourceFileId);
+
+    // 2. "Copy" by uploading from the source URL
+    const copyResponse = await imagekit.upload({
+      file: sourceFileDetails.url,
+      fileName: newFileName,
+      folder: destinationFolder,
+      useUniqueFileName: false, // Ensure the new file name is used
+    });
+    
+    // 3. Delete the old file
+    await imagekit.deleteFile(sourceFileId);
+
+    return { success: true, url: copyResponse.url, fileId: copyResponse.fileId };
+
+  } catch (error: any) {
+    console.error('ImageKit move error:', error);
+    return { success: false, error: error.message || 'Failed to move image.' };
+  }
+}
