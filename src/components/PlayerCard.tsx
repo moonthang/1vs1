@@ -1,8 +1,9 @@
+
 "use client";
 
 import type { Player } from '@/types';
 import Image from 'next/image';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { User, Target, ShieldCheck, Zap, ArrowRightLeft, Dumbbell, ListChecks, Goal, Handshake, Star, RefreshCw, Cake, Euro, Edit, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { IMAGEKIT_URL_ENDPOINT } from '@/lib/imagekit';
@@ -11,6 +12,7 @@ import { countryMap } from '@/data/countries';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { cn, calculateAge } from '@/lib/utils';
+import { CardHeader, CardTitle } from './ui/card';
 
 interface PlayerCardProps {
   player: Player;
@@ -145,7 +147,7 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
                             <span>{age} años</span>
                         </div>
                     )}
-                    {player.value != null && (
+                    {player.value != null && player.value > 0 && (
                         <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
                             <Euro className="w-3.5 h-3.5" />
                             <span>{formatValue(player.value)}</span>
@@ -260,3 +262,5 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
     </Card>
   );
 }
+
+    

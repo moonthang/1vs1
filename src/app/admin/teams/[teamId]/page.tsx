@@ -8,7 +8,7 @@ import type { Team, Player, Coach, TeamInfo } from '@/types';
 import type { Country } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, User, Users, PlusCircle, Edit, Trash2, Loader2, Eraser, X, ArrowRightLeft, BarChart3, Cake, Globe, Baby, Save } from 'lucide-react';
+import { ArrowLeft, User, Users, PlusCircle, Edit, Trash2, Loader2, Eraser, X, ArrowRightLeft, BarChart3, Cake, Globe, Baby, Save, LayoutGrid, List } from 'lucide-react';
 import { PlayerCard } from '@/components/PlayerCard';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -50,15 +50,17 @@ import logo1vs1 from '@/assets/logo/1vs1.png';
 import { NationalitySelector } from '@/components/NationalitySelector';
 import { countryMap } from '@/data/countries';
 import { ScrollToTopButton } from '@/components/ScrollToTopButton';
-import { calculateAge } from '@/lib/utils';
+import { calculateAge, cn } from '@/lib/utils';
 import type { UploadResponse } from '@/actions/uploadActions';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const parsePlayerValue = (value: string | undefined): number | undefined => {
-    if (!value || value.trim() === '') return undefined;
+const parsePlayerValue = (value: string | undefined): number | null => {
+    if (!value || value.trim() === '') return null;
     
     const valueStr = value.trim().replace(',', '.');
     const num = parseFloat(valueStr);
-    if (isNaN(num)) return undefined;
+    if (isNaN(num)) return null;
 
     if (valueStr.includes('.')) {
         return Math.round(num * 1000000);
@@ -339,7 +341,7 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
         needsPhotoUpdate: !uploadResult?.url,
         nationality: selectedNationality?.value || '',
         birthDate: player.birthDate || '',
-        value: parsePlayerValue(valueInput) ?? 0,
+        value: parsePlayerValue(valueInput) ?? undefined,
     };
 
     onSave(finalPlayer);
@@ -534,7 +536,7 @@ const EditPlayerDialog = ({
   const handleSave = async () => {
     if (!editedPlayer) return;
     setIsSaving(true);
-    let finalPlayer = { ...editedPlayer, nationality: selectedNationality?.value, value: parsePlayerValue(valueInput) };
+    let finalPlayer = { ...editedPlayer, nationality: selectedNationality?.value || '', value: parsePlayerValue(valueInput) ?? undefined };
     
     try {
         if (imageAction === 'replace' && newFileData) {
@@ -812,6 +814,7 @@ export default function TeamViewPage() {
     const [selectedPosition, setSelectedPosition] = useState('all');
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+    const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
     
     const positionOptions = ['all', ...playerPositions];
 
@@ -927,11 +930,19 @@ export default function TeamViewPage() {
     
     const handleAddPlayer = async (newPlayer: Player) => {
         if (!team) return;
+        const playerToAdd = {
+            ...newPlayer,
+            imageFileId: newPlayer.imageFileId ?? '',
+            nationality: newPlayer.nationality ?? '',
+            birthDate: newPlayer.birthDate ?? '',
+            value: newPlayer.value ?? 0,
+        };
+
         try {
             const teamRef = doc(db, "equipos", teamId);
-            await updateDoc(teamRef, { players: arrayUnion(newPlayer) });
+            await updateDoc(teamRef, { players: arrayUnion(playerToAdd) });
             
-            const updatedTeam = { ...team, players: [...team.players, newPlayer] };
+            const updatedTeam = { ...team, players: [...team.players, playerToAdd] };
             setTeam(updatedTeam);
         } catch (error) {
             console.error("Error adding player: ", error);
@@ -1057,7 +1068,7 @@ export default function TeamViewPage() {
                 transaction.update(newTeamRef, { players: updatedNewPlayers });
             });
 
-            await fetchTeamData(); // Re-fetch all data to ensure UI consistency
+            await fetchTeamData();
             setSelectedPlayer(null);
             toast({ title: 'Jugador Movido', description: `${playerToMove.name} ha sido transferido.` });
 
@@ -1238,6 +1249,14 @@ export default function TeamViewPage() {
                                         Jugadores ({players.length})
                                     </CardTitle>
                                     <div className="flex items-center gap-2 flex-wrap justify-end">
+                                        <div className="flex items-center gap-1 rounded-md bg-muted p-1">
+                                            <Button variant={viewMode === 'card' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => setViewMode('card')}>
+                                                <LayoutGrid className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => setViewMode('list')}>
+                                                <List className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                          <Select value={selectedPosition} onValueChange={setSelectedPosition}>
                                             <SelectTrigger className="w-[180px]">
                                                 <SelectValue placeholder="Filtrar por posición" />
@@ -1280,20 +1299,87 @@ export default function TeamViewPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {filteredPlayers.map(player => (
-                                        <PlayerCard 
-                                          key={player.id} 
-                                          player={player} 
-                                          showStats={true}
-                                          onSelect={handlePlayerClick}
-                                          isSelected={selectedPlayer?.id === player.id}
-                                          onEdit={() => setEditPlayerModalOpen(true)}
-                                          onMove={() => setMovePlayerModalOpen(true)}
-                                          onDelete={() => setPlayerToDelete(player)}
-                                        />
-                                    ))}
-                                </div>
+                                {viewMode === 'card' ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {filteredPlayers.map(player => (
+                                            <PlayerCard 
+                                            key={player.id} 
+                                            player={player} 
+                                            showStats={true}
+                                            onSelect={handlePlayerClick}
+                                            isSelected={selectedPlayer?.id === player.id}
+                                            onEdit={() => { setSelectedPlayer(player); setEditPlayerModalOpen(true); }}
+                                            onMove={() => { setSelectedPlayer(player); setMovePlayerModalOpen(true); }}
+                                            onDelete={() => setPlayerToDelete(player)}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Nombre</TableHead>
+                                                    <TableHead className="text-center">Dorsal</TableHead>
+                                                    <TableHead>Posición</TableHead>
+                                                    <TableHead>Nacionalidad</TableHead>
+                                                    <TableHead className="text-right">Acciones</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {filteredPlayers.map(player => {
+                                                    const country = player.nationality ? countryMap.get(player.nationality) : null;
+                                                    return (
+                                                    <TableRow 
+                                                        key={player.id} 
+                                                        className={cn("cursor-pointer", selectedPlayer?.id === player.id && "bg-muted")}
+                                                        onClick={() => handlePlayerClick(player)}
+                                                    >
+                                                        <TableCell className="font-medium">{player.name}</TableCell>
+                                                        <TableCell className="text-center">{player.jerseyNumber}</TableCell>
+                                                        <TableCell>{player.position}</TableCell>
+                                                        <TableCell>
+                                                            {country && (
+                                                                <div className="flex items-center gap-2">
+                                                                    <Image src={country.flag} alt={country.label} width={20} height={15} className="border border-muted" />
+                                                                    <span>{country.label}</span>
+                                                                </div>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                             <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); setEditPlayerModalOpen(true); }}>
+                                                                            <Edit className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent><p>Editar</p></TooltipContent>
+                                                                </Tooltip>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); setMovePlayerModalOpen(true); }}>
+                                                                            <ArrowRightLeft className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent><p>Mover</p></TooltipContent>
+                                                                </Tooltip>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setPlayerToDelete(player); }}>
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent><p>Eliminar</p></TooltipContent>
+                                                                </Tooltip>
+                                                             </TooltipProvider>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )})}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                )}
                                  {filteredPlayers.length === 0 && (
                                     <div className="text-center py-8 text-muted-foreground">
                                         No hay jugadores para mostrar.
@@ -1321,7 +1407,7 @@ export default function TeamViewPage() {
             {selectedPlayer && (
                 <EditPlayerDialog
                     isOpen={isEditPlayerModalOpen}
-                    onClose={() => setEditPlayerModalOpen(false)}
+                    onClose={() => { setEditPlayerModalOpen(false); setSelectedPlayer(null); }}
                     player={selectedPlayer}
                     onSave={handleEditPlayer}
                 />
@@ -1329,7 +1415,7 @@ export default function TeamViewPage() {
             {selectedPlayer && (
                 <MovePlayerDialog
                     isOpen={isMovePlayerModalOpen}
-                    onClose={() => setMovePlayerModalOpen(false)}
+                    onClose={() => { setMovePlayerModalOpen(false); setSelectedPlayer(null); }}
                     player={selectedPlayer}
                     teams={allTeams}
                     currentTeamId={teamId}
