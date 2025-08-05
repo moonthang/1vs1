@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getImageKitClient } from '@/lib/imagekit';
@@ -59,20 +60,15 @@ export async function moveImage(sourceFileId: string, destinationFolder: string,
   }
 
   try {
-    // ImageKit doesn't have a direct "move and rename" in one step via SDK's simpler methods.
-    // The typical approach is copy -> delete.
-    // 1. Get details of the source file to get its URL
     const sourceFileDetails = await imagekit.getFileDetails(sourceFileId);
 
-    // 2. "Copy" by uploading from the source URL
     const copyResponse = await imagekit.upload({
       file: sourceFileDetails.url,
       fileName: newFileName,
       folder: destinationFolder,
-      useUniqueFileName: false, // Ensure the new file name is used
+      useUniqueFileName: false,
     });
     
-    // 3. Delete the old file
     await imagekit.deleteFile(sourceFileId);
 
     return { success: true, url: copyResponse.url, fileId: copyResponse.fileId };

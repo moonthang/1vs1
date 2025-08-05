@@ -341,7 +341,7 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
         needsPhotoUpdate: !uploadResult?.url,
         nationality: selectedNationality?.value || '',
         birthDate: player.birthDate || '',
-        value: parsePlayerValue(valueInput) ?? undefined,
+        value: parsePlayerValue(valueInput) ?? 0,
     };
 
     onSave(finalPlayer);
@@ -1319,11 +1319,11 @@ export default function TeamViewPage() {
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
-                                                    <TableHead>Nombre</TableHead>
-                                                    <TableHead className="text-center">Dorsal</TableHead>
-                                                    <TableHead>Posición</TableHead>
-                                                    <TableHead>Nacionalidad</TableHead>
-                                                    <TableHead className="text-right">Acciones</TableHead>
+                                                    <TableHead className="px-2 text-xs sm:px-4 sm:text-sm">Nombre</TableHead>
+                                                    <TableHead className="text-center px-1 text-xs sm:px-4 sm:text-sm">Dorsal</TableHead>
+                                                    <TableHead className="px-2 text-xs sm:px-4 sm:text-sm">Posición</TableHead>
+                                                    <TableHead className="px-2 hidden sm:table-cell text-xs sm:px-4 sm:text-sm">Nacionalidad</TableHead>
+                                                    <TableHead className="text-right px-2 text-xs sm:px-4 sm:text-sm">Acciones</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -1335,10 +1335,10 @@ export default function TeamViewPage() {
                                                         className={cn("cursor-pointer", selectedPlayer?.id === player.id && "bg-muted")}
                                                         onClick={() => handlePlayerClick(player)}
                                                     >
-                                                        <TableCell className="font-medium">{player.name}</TableCell>
-                                                        <TableCell className="text-center">{player.jerseyNumber}</TableCell>
-                                                        <TableCell>{player.position}</TableCell>
-                                                        <TableCell>
+                                                        <TableCell className="font-medium px-2 text-xs sm:px-4 sm:text-sm">{player.name}</TableCell>
+                                                        <TableCell className="text-center px-1 text-xs sm:px-4 sm:text-sm">{player.jerseyNumber}</TableCell>
+                                                        <TableCell className="px-2 text-xs sm:px-4 sm:text-sm">{player.position}</TableCell>
+                                                        <TableCell className="px-2 hidden sm:table-cell">
                                                             {country && (
                                                                 <div className="flex items-center gap-2">
                                                                     <Image src={country.flag} alt={country.label} width={20} height={15} className="border border-muted" />
@@ -1346,11 +1346,11 @@ export default function TeamViewPage() {
                                                                 </div>
                                                             )}
                                                         </TableCell>
-                                                        <TableCell className="text-right">
+                                                        <TableCell className="text-right px-2 sm:px-4">
                                                              <TooltipProvider>
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
-                                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); setEditPlayerModalOpen(true); }}>
+                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); setEditPlayerModalOpen(true); }}>
                                                                             <Edit className="h-4 w-4" />
                                                                         </Button>
                                                                     </TooltipTrigger>
@@ -1358,7 +1358,7 @@ export default function TeamViewPage() {
                                                                 </Tooltip>
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
-                                                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); setMovePlayerModalOpen(true); }}>
+                                                                         <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); setMovePlayerModalOpen(true); }}>
                                                                             <ArrowRightLeft className="h-4 w-4" />
                                                                         </Button>
                                                                     </TooltipTrigger>
@@ -1366,7 +1366,7 @@ export default function TeamViewPage() {
                                                                 </Tooltip>
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
-                                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setPlayerToDelete(player); }}>
+                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setPlayerToDelete(player); }}>
                                                                             <Trash2 className="h-4 w-4" />
                                                                         </Button>
                                                                     </TooltipTrigger>

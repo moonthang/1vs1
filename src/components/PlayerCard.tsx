@@ -59,7 +59,7 @@ const formatValue = (value: number): string => {
 const getSofascoreBadgeClass = (score: number) => {
   if (score < 6.0) return 'bg-red-500 text-white';
   if (score < 6.5) return 'bg-orange-500 text-white';
-  if (score < 7.0) return 'bg-yellow-500 text-black';
+  if (score < 7.0) return 'bg-yellow-500 text-white';
   if (score < 8.0) return 'bg-green-500 text-white';
   if (score <= 10.0) return 'bg-teal-500 text-white';
   return 'bg-gray-400 text-white';
@@ -262,5 +262,3 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
     </Card>
   );
 }
-
-    

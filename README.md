@@ -22,7 +22,7 @@
 
 ## 📝 Descripción Detallada
 
-**1vs1 FutDraft** es una aplicación web interactiva y altamente personalizable, diseñada para que los aficionados al fútbol puedan crear, visualizar y compartir alineaciones de manera profesional. Este proyecto, desarrollado como parte de mi portafolio, demuestra la capacidad de construir una aplicación full-stack moderna, interactiva y escalable.
+**1vs1 FutDraft** es una aplicación web interactiva, diseñada para que los aficionados al fútbol colombiano puedan crear, visualizar y compartir alineaciones. Este proyecto, desarrollado como parte de mi portafolio, demuestra la capacidad de construir una aplicación full-stack moderna, interactiva y escalable.
 
 La plataforma permite a los usuarios sumergirse en la estrategia táctica del fútbol a través de dos modos principales:
 
@@ -78,6 +78,7 @@ Además, la aplicación incluye un **Panel de Administración** protegido por co
 *   💾 **Persistencia de Datos:** Las alineaciones se guardan en el `localStorage` del navegador, permitiendo a los usuarios continuar donde lo dejaron.
 *   📱 **Interfaz Responsiva:** Diseño completamente adaptable que funciona a la perfección en dispositivos de escritorio, tabletas y móviles.
 *   🔄 **Importación/Exportación de Datos:** Respalda y restaura toda la información de los equipos con archivos JSON desde el panel de administración.
+*   📊 **Estadísticas Globales:** Visualiza rankings de los mejores jugadores de toda la liga en categorías como Goleadores, Asistidores y más.
 
 ## 📸 Capturas de Pantalla
 
@@ -158,4 +159,3 @@ Este proyecto fue desarrollado por **Miguel Angel Sepulveda Burgos**.
 
 *   <img src="https://cdn.worldvectorlogo.com/logos/github-icon-2.svg" width="20" height="20"/> GitHub: [@moonthang](https://github.com/moonthang)
 *   <img src="https://static.vecteezy.com/system/resources/previews/018/930/480/non_2x/linkedin-logo-linkedin-icon-transparent-free-png.png" width="20" height="20"/> LinkedIn: [Miguel Ángel Sepulveda Burgos](https://www.linkedin.com/in/miguel-%C3%A1ngel-sep%C3%BAlveda-burgos-a87808167/)
-
