@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, PlusCircle, Eye, Edit, Trash2, Loader2, UploadCloud, Download, X, LogOut, Menu, CalendarClock } from 'lucide-react';
-import type { TeamInfo } from '@/types';
+import { ArrowLeft, PlusCircle, Eye, Edit, Trash2, Loader2, UploadCloud, Download, X, LogOut, Menu, CalendarClock, MoreVertical } from 'lucide-react';
+import type { TeamInfo, Team } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -407,6 +407,7 @@ export default function AdminPage() {
     const [isLoadingAuth, setIsLoadingAuth] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importData, setImportData] = useState<{ teams: any[] } | null>(null);
+    const [teamToImport, setTeamToImport] = useState<TeamInfo | null>(null);
     const [isImporting, setIsImporting] = useState(false);
     const [importDate, setImportDate] = useState<string | null>(null);
     const [isUpdateDateModalOpen, setUpdateDateModalOpen] = useState(false);
@@ -535,7 +536,7 @@ export default function AdminPage() {
         }
     };
 
-    const handleExport = async () => {
+    const handleExportAll = async () => {
         try {
             const querySnapshot = await getDocs(collection(db, 'equipos'));
             const teamsData = querySnapshot.docs.map(teamDoc => ({ id: teamDoc.id, ...teamDoc.data() }));
@@ -570,10 +571,55 @@ export default function AdminPage() {
             toast({ variant: "destructive", title: "Error", description: "No se pudieron exportar los datos." });
         }
     };
+    
+    const handleExportTeam = async (team: TeamInfo) => {
+        try {
+            const teamDocRef = doc(db, 'equipos', team.id);
+            const teamDoc = await getDoc(teamDocRef);
 
-    const handleImportClick = () => {
+            if (!teamDoc.exists()) {
+                toast({ variant: "destructive", title: "Error", description: "No se encontró el equipo para exportar." });
+                return;
+            }
+
+            const teamData = { id: teamDoc.id, ...teamDoc.data() };
+            
+            const backupData = {
+                version: '1.2-single-team',
+                createdAt: new Date().toISOString(),
+                data: {
+                    team: teamData
+                }
+            };
+
+            const jsonString = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `equipo-${team.name.replace(/\s+/g, '_')}-backup.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            toast({ title: 'Exportación de Equipo Completa', description: `Los datos de ${team.name} se han guardado.` });
+        } catch (error: any) {
+            console.error("Error exporting team data: ", error);
+            toast({ variant: "destructive", title: "Error de Exportación", description: `No se pudo exportar el equipo ${team.name}.` });
+        }
+    };
+
+    const handleImportAllClick = () => {
+        setTeamToImport(null); 
         fileInputRef.current?.click();
     };
+
+    const handleImportTeamClick = (team: TeamInfo) => {
+        setTeamToImport(team);
+        fileInputRef.current?.click();
+    };
+
 
     const handleFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -585,15 +631,24 @@ export default function AdminPage() {
                 const result = e.target?.result;
                 if (typeof result !== 'string') throw new Error("No se pudo leer el archivo");
                 const parsedData = JSON.parse(result);
-
-                if (parsedData && parsedData.data && Array.isArray(parsedData.data.teams)) {
-                    setImportData(parsedData.data);
-                    setImportDate(parsedData.createdAt || new Date().toISOString());
-                } else {
-                    throw new Error("El archivo JSON no tiene el formato esperado.");
+                
+                if (teamToImport) { // Importación de un solo equipo
+                    if (parsedData && parsedData.data && parsedData.data.team && parsedData.data.team.id) {
+                         setImportData({ teams: [parsedData.data.team] });
+                         setImportDate(parsedData.createdAt || new Date().toISOString());
+                    } else {
+                        throw new Error("El archivo de equipo no tiene el formato esperado.");
+                    }
+                } else { // Importación global
+                    if (parsedData && parsedData.data && Array.isArray(parsedData.data.teams)) {
+                        setImportData(parsedData.data);
+                        setImportDate(parsedData.createdAt || new Date().toISOString());
+                    } else {
+                        throw new Error("El archivo JSON global no tiene el formato esperado.");
+                    }
                 }
             } catch (error: any) {
-                toast({ variant: "destructive", title: "Error de Importación", description: "El archivo no es un JSON válido o tiene un formato incorrecto." });
+                toast({ variant: "destructive", title: "Error de Importación", description: error.message || "El archivo no es un JSON válido o tiene un formato incorrecto." });
                 setImportData(null);
                 setImportDate(null);
             } finally {
@@ -603,7 +658,7 @@ export default function AdminPage() {
         reader.readAsText(file);
     };
 
-    const processImport = async () => {
+    const processImportAll = async () => {
         if (!importData) return;
         setIsImporting(true);
         try {
@@ -628,6 +683,37 @@ export default function AdminPage() {
             setIsImporting(false);
             setImportData(null);
             setImportDate(null);
+        }
+    };
+    
+    const processImportTeam = async () => {
+        if (!importData || !teamToImport) return;
+        setIsImporting(true);
+
+        try {
+            const teamFromFile = importData.teams[0] as Team;
+            const { id, ...teamData } = teamFromFile;
+
+            if (id !== teamToImport.id) {
+                toast({ variant: "destructive", title: "Error de Coincidencia", description: `El archivo es para ${teamFromFile.name}, pero estás intentando importar sobre ${teamToImport.name}.` });
+                setIsImporting(false);
+                setImportData(null);
+                setTeamToImport(null);
+                return;
+            }
+
+            const teamRef = doc(db, 'equipos', id);
+            await setDoc(teamRef, teamData);
+
+            toast({ title: 'Importación de Equipo Exitosa', description: `Los datos de ${teamToImport.name} se han restaurado.` });
+            await fetchTeams();
+        } catch (error: any) {
+            console.error("Error importing team data: ", error);
+            toast({ variant: "destructive", title: "Error de Importación", description: "Ocurrió un error al restaurar los datos del equipo." });
+        } finally {
+            setIsImporting(false);
+            setImportData(null);
+            setTeamToImport(null);
         }
     };
 
@@ -664,7 +750,7 @@ export default function AdminPage() {
             <div className="w-full max-w-7xl">
                 <header className="mb-8 flex flex-col items-center gap-4">
                     <div className="flex w-full items-center justify-between">
-                        <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
+                        <Button variant="ghost" size="icon" onClick={() => router.push('/')} className="text-primary hover:bg-transparent">
                             <ArrowLeft />
                         </Button>
                         <h1 className="text-3xl font-bold text-primary text-center sm:text-4xl">
@@ -685,11 +771,11 @@ export default function AdminPage() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={handleImportClick}>
+                                <DropdownMenuItem onClick={handleImportAllClick}>
                                     <UploadCloud className="mr-2 h-4 w-4" />
                                     <span>Importar</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleExport}>
+                                <DropdownMenuItem onClick={handleExportAll}>
                                     <Download className="mr-2 h-4 w-4" />
                                     <span>Exportar</span>
                                 </DropdownMenuItem>
@@ -813,6 +899,28 @@ export default function AdminPage() {
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
+                                        <DropdownMenu>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="icon">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                </TooltipTrigger>
+                                                <TooltipContent><p>Más opciones</p></TooltipContent>
+                                            </Tooltip>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleImportTeamClick(team)}>
+                                                    <UploadCloud className="mr-2 h-4 w-4" />
+                                                    Importar
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleExportTeam(team)}>
+                                                    <Download className="mr-2 h-4 w-4" />
+                                                    Exportar
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TooltipProvider>
                                 </CardFooter>
                             </Card>
@@ -846,14 +954,14 @@ export default function AdminPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Confirmar Importación</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Estás a punto de sobrescribir los datos con el contenido de este archivo. Esto también establecerá la fecha de hoy como la "Última Actualización" de las plantillas.
-                            {importDate && <p className="text-xs mt-2 text-muted-foreground">Fecha del archivo: {new Date(importDate).toLocaleString()}</p>}
-                        </AlertDialogDescription>
+                            <AlertDialogDescription>
+                                {teamToImport ? `Estás a punto de sobrescribir los datos de ${teamToImport.name} con el contenido de este archivo.` : `Estás a punto de sobrescribir los datos con el contenido de este archivo. Esto también establecerá la fecha de hoy como la "Última Actualización" de las plantillas.`}
+                            </AlertDialogDescription>
+                            {importDate && <div className="text-xs mt-2 text-muted-foreground">Fecha del archivo: {new Date(importDate).toLocaleString()}</div>}
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={isImporting}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={processImport} disabled={isImporting}>
+                        <AlertDialogAction onClick={teamToImport ? processImportTeam : processImportAll} disabled={isImporting}>
                             {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Confirmar
                         </AlertDialogAction>
@@ -881,3 +989,10 @@ export default function AdminPage() {
         </div>
     );
 }
+    
+    
+
+    
+
+
+

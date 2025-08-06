@@ -8,7 +8,7 @@ import type { Team, Player, Coach, TeamInfo } from '@/types';
 import type { Country } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, User, Users, PlusCircle, Edit, Trash2, Loader2, Eraser, X, ArrowRightLeft, BarChart3, Cake, Globe, Baby, Save, LayoutGrid, List } from 'lucide-react';
+import { ArrowLeft, User, Users, PlusCircle, Edit, Trash2, Loader2, Eraser, X, ArrowRightLeft, BarChart3, Cake, Globe, Baby, Save, LayoutGrid, List, Search } from 'lucide-react';
 import { PlayerCard } from '@/components/PlayerCard';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -60,22 +60,29 @@ const parsePlayerValue = (value: string | undefined): number | null => {
     
     const valueStr = value.trim().replace(',', '.');
     const num = parseFloat(valueStr);
+    
     if (isNaN(num)) return null;
 
     if (valueStr.includes('.')) {
         return Math.round(num * 1000000);
     }
+    
     return Math.round(num * 1000);
 };
 
+
 const formatValueForInput = (value: number | undefined): string => {
     if (value === undefined || value === null) return '';
+
     if (value >= 1000000) {
-        return (value / 1000000).toString().replace('.', ',');
+        const millions = value / 1000000;
+        return millions.toFixed(1).replace('.', ',');
     }
+    
     if (value >= 1000) {
         return (value / 1000).toString();
     }
+    
     return value.toString();
 };
 
@@ -279,6 +286,13 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
     onClose();
   };
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 2 && value.length <= 4) value = value.slice(0, 2) + '/' + value.slice(2);
+    if (value.length > 4) value = value.slice(0, 2) + '/' + value.slice(2, 4) + '/' + value.slice(4);
+    setPlayer(prev => ({ ...prev, birthDate: value.slice(0, 10) }));
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type } = e.target;
     if (type === 'number') {
@@ -376,7 +390,7 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="birthDate" className="text-right">Fec. Nacimiento</Label>
-            <Input id="birthDate" value={player.birthDate || ''} onChange={handleChange} className="col-span-3" placeholder="DD/MM/YYYY" />
+            <Input id="birthDate" value={player.birthDate || ''} onChange={handleDateChange} className="col-span-3" placeholder="DD/MM/YYYY" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="value" className="text-right">Valor (€)</Label>
@@ -482,6 +496,14 @@ const EditPlayerDialog = ({
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editedPlayer) return;
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 2 && value.length <= 4) value = value.slice(0, 2) + '/' + value.slice(2);
+    if (value.length > 4) value = value.slice(0, 2) + '/' + value.slice(2, 4) + '/' + value.slice(4);
+    setEditedPlayer(prev => prev ? { ...prev, birthDate: value.slice(0, 10) } : null);
   };
 
   const handleInputChange = (field: keyof Player, value: string | number | boolean | undefined | null) => {
@@ -623,7 +645,7 @@ const EditPlayerDialog = ({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="birthDate" className="text-right">Fec. Nacimiento</Label>
-            <Input id="birthDate" value={editedPlayer.birthDate ?? ''} onChange={(e) => handleInputChange('birthDate', e.target.value)} className="col-span-3" placeholder="DD/MM/YYYY" />
+            <Input id="birthDate" value={editedPlayer.birthDate ?? ''} onChange={handleDateChange} className="col-span-3" placeholder="DD/MM/YYYY" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="value" className="text-right">Valor (€)</Label>
@@ -812,9 +834,11 @@ export default function TeamViewPage() {
     const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
     const [selectedPosition, setSelectedPosition] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isLoadingAuth, setIsLoadingAuth] = useState(true);
     const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
+    const [isSearchActive, setIsSearchActive] = useState(false);
     
     const positionOptions = ['all', ...playerPositions];
 
@@ -833,9 +857,22 @@ export default function TeamViewPage() {
     }, [team?.players, positionOrder]);
 
     const filteredPlayers = useMemo(() => {
-        if (selectedPosition === 'all') return sortedPlayers;
-        return sortedPlayers.filter(p => p.position === selectedPosition);
-    }, [sortedPlayers, selectedPosition]);
+        let players = sortedPlayers;
+
+        if (selectedPosition !== 'all') {
+            players = players.filter(p => p.position === selectedPosition);
+        }
+
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase();
+            players = players.filter(p => 
+                p.name.toLowerCase().includes(term) || 
+                p.jerseyNumber?.toString().includes(term)
+            );
+        }
+
+        return players;
+    }, [sortedPlayers, selectedPosition, searchTerm]);
     
     const finalCoachImageUrl = useMemo(() => {
         if (!team?.coach?.imageUrl) return null;
@@ -1141,7 +1178,7 @@ export default function TeamViewPage() {
         <div className="min-h-screen bg-background text-foreground flex flex-col items-center p-4 md:p-8">
             <div className="w-full max-w-6xl">
                 <header className="mb-8 flex w-full items-center justify-between">
-                    <Button variant="ghost" size="icon" onClick={() => router.push('/admin')}>
+                    <Button variant="ghost" size="icon" onClick={() => router.push('/admin')} className="text-primary hover:bg-transparent">
                         <ArrowLeft />
                     </Button>
                     <div className="flex items-center justify-center gap-4">
@@ -1249,6 +1286,23 @@ export default function TeamViewPage() {
                                         Jugadores ({players.length})
                                     </CardTitle>
                                     <div className="flex items-center gap-2 flex-wrap justify-end">
+                                        <div className="flex items-center gap-1">
+                                            {isSearchActive ? (
+                                                <Input
+                                                    type="search"
+                                                    placeholder="Buscar..."
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                    onBlur={() => setIsSearchActive(false)}
+                                                    autoFocus
+                                                    className="h-9 w-[150px] lg:w-[180px] animate-in fade-in duration-300"
+                                                />
+                                            ) : (
+                                                <Button variant="ghost" size="icon" onClick={() => setIsSearchActive(true)} className="h-9 w-9">
+                                                    <Search className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-1 rounded-md bg-muted p-1">
                                             <Button variant={viewMode === 'card' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => setViewMode('card')}>
                                                 <LayoutGrid className="h-4 w-4" />
@@ -1366,9 +1420,11 @@ export default function TeamViewPage() {
                                                                 </Tooltip>
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
-                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setPlayerToDelete(player); }}>
-                                                                            <Trash2 className="h-4 w-4" />
-                                                                        </Button>
+                                                                        <AlertDialogTrigger asChild>
+                                                                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setPlayerToDelete(player); }}>
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </AlertDialogTrigger>
                                                                     </TooltipTrigger>
                                                                     <TooltipContent><p>Eliminar</p></TooltipContent>
                                                                 </Tooltip>
@@ -1442,5 +1498,3 @@ export default function TeamViewPage() {
         </div>
     );
 }
-
-    

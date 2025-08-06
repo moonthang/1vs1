@@ -95,7 +95,7 @@ export default function BuildPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4 md:p-8">
       <header className="mb-8 flex w-full max-w-4xl flex-col items-center">
         <div className="flex w-full items-center justify-between">
-            <Button variant="ghost" size="icon" onClick={() => router.push('/')} className="text-primary hover:bg-transparent hover:text-primary">
+            <Button variant="ghost" size="icon" onClick={() => router.push('/')} className="text-primary hover:bg-transparent">
                 <ArrowLeft />
             </Button>
             <div className="text-center">

@@ -23,6 +23,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollToTopButton } from '@/components/ScrollToTopButton';
 import { cn, calculateAge } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 let htmlToImage: typeof import('html-to-image') | null = null;
 const PT_SANS_FONT_URL = "https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap";
@@ -238,7 +239,7 @@ function LineupShowdownComponent() {
   return (
     <div className="min-h-screen bg-background text-foreground px-4 md:px-8 pt-2 md:pt-4 pb-4 md:pb-8">
       <header className="mb-0 flex w-full items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-primary hover:bg-transparent hover:text-primary">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-primary hover:bg-transparent">
             <ArrowLeft />
         </Button>
         <div className="text-center">
