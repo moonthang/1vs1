@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -750,7 +749,7 @@ export default function AdminPage() {
             <div className="w-full max-w-7xl">
                 <header className="mb-8 flex flex-col items-center gap-4">
                     <div className="flex w-full items-center justify-between">
-                        <Button variant="ghost" size="icon" onClick={() => router.push('/')} className="text-primary hover:bg-transparent">
+                        <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
                             <ArrowLeft />
                         </Button>
                         <h1 className="text-3xl font-bold text-primary text-center sm:text-4xl">
@@ -989,10 +988,3 @@ export default function AdminPage() {
         </div>
     );
 }
-    
-    
-
-    
-
-
-

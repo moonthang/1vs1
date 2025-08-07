@@ -64,7 +64,8 @@ const StatsDialog = ({ isOpen, onClose, players, teamsMap }: { isOpen: boolean, 
                 const positionMatch = positionFilter ? p.position === positionFilter : true;
                 return hasStat && positionMatch;
             })
-            .sort((a, b) => getStat(b, stat) - getStat(a, stat));
+            .sort((a, b) => getStat(b, stat) - getStat(a, stat))
+            .slice(0, 20);
     };
 
     const renderTableRows = (stat: keyof Player['stats']) => {

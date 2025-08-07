@@ -67,13 +67,21 @@ export const useLineupStore = create<LineupState>((set, get) => ({
     try {
       const teamADocRef = doc(db, 'equipos', teamAId);
       const teamADoc = await getDoc(teamADocRef);
-      const teamAData = teamADoc.exists() ? ({ id: teamADoc.id, ...teamADoc.data() } as Team) : null;
+      let teamAData = teamADoc.exists() ? ({ id: teamADoc.id, ...teamADoc.data() } as Team) : null;
       
       let teamBData: Team | null = null;
       if (teamBId) {
         const teamBDocRef = doc(db, 'equipos', teamBId);
         const teamBDoc = await getDoc(teamBDocRef);
         teamBData = teamBDoc.exists() ? ({ id: teamBDoc.id, ...teamBDoc.data() } as Team) : null;
+      }
+
+      // Filter out loaned or legend players from the rosters for game modes
+      if (teamAData?.players) {
+        teamAData.players = teamAData.players.filter(p => p.rosterStatus !== 'loaned' && p.rosterStatus !== 'legend');
+      }
+      if (teamBData?.players) {
+        teamBData.players = teamBData.players.filter(p => p.rosterStatus !== 'loaned' && p.rosterStatus !== 'legend');
       }
       
       set({ teamA: teamAData, teamB: teamBData });

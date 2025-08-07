@@ -1,6 +1,8 @@
 
 
 
+export type PlayerRosterStatus = 'in_roster' | 'loaned' | 'legend';
+
 export interface Player {
   id: string;
   name: string;
@@ -27,6 +29,7 @@ export interface Player {
   nationality?: string;
   birthDate?: string;
   value?: number;
+  rosterStatus?: PlayerRosterStatus;
 }
 
 export interface Coach {

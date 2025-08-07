@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Player } from '@/types';
@@ -23,6 +22,7 @@ interface PlayerCardProps {
   onEdit?: () => void;
   onMove?: () => void;
   onDelete?: () => void;
+  onEndLoan?: () => void;
 }
 
 const StatIcon = ({ statName }: { statName: string }) => {
@@ -65,7 +65,7 @@ const getSofascoreBadgeClass = (score: number) => {
   return 'bg-gray-400 text-white';
 };
 
-export function PlayerCard({ player, onSelect, isSelected, showStats = false, isUnavailable = false, onEdit, onMove, onDelete }: PlayerCardProps) {
+export function PlayerCard({ player, onSelect, isSelected, showStats = false, isUnavailable = false, onEdit, onMove, onDelete, onEndLoan }: PlayerCardProps) {
   
   const getImageUrl = () => {
     let imageUrl = player.imageUrl || '';
@@ -187,13 +187,13 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
                         );
                     })}
                     </div>
-                    {isSelected && (onEdit || onMove || onDelete) && (
+                    {(onEdit || onMove || onDelete || onEndLoan) && (
                         <div className="mt-auto pt-2 flex justify-end gap-1">
                             <TooltipProvider>
                                 {onEdit && (
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
                                                 <Edit className="h-4 w-4" />
                                             </Button>
                                         </TooltipTrigger>
@@ -205,12 +205,24 @@ export function PlayerCard({ player, onSelect, isSelected, showStats = false, is
                                 {onMove && (
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); onMove(); }}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-sky-600 hover:text-sky-700" onClick={(e) => { e.stopPropagation(); onMove(); }}>
                                                 <ArrowRightLeft className="h-4 w-4" />
                                             </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>
                                             <p>Mover Jugador</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )}
+                                {onEndLoan && (
+                                     <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700" onClick={(e) => { e.stopPropagation(); onEndLoan(); }}>
+                                                <RefreshCw className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Finalizar Préstamo</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 )}

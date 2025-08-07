@@ -1,14 +1,13 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import type { Team, Player, Coach, TeamInfo } from '@/types';
+import type { PlayerRosterStatus, Team, Player, Coach, TeamInfo } from '@/types';
 import type { Country } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowLeft, User, Users, PlusCircle, Edit, Trash2, Loader2, Eraser, X, ArrowRightLeft, BarChart3, Cake, Globe, Baby, Save, LayoutGrid, List, Search } from 'lucide-react';
+import { ArrowLeft, User, Users, PlusCircle, Edit, Trash2, Loader2, Eraser, X, ArrowRightLeft, BarChart3, Cake, Globe, Baby, Save, LayoutGrid, List, Search, Star, Bookmark, RefreshCw } from 'lucide-react';
 import { PlayerCard } from '@/components/PlayerCard';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -266,7 +265,7 @@ const EditCoachDialog = ({ isOpen, onClose, coach, teamId, onSave }: { isOpen: b
 const playerPositions = ['Portero', 'Defensa', 'Mediocampista', 'Delantero'];
 
 const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen: boolean, onClose: () => void, onSave: (player: Player) => void, teamId: string, players: Player[] }) => {
-  const [player, setPlayer] = useState<Partial<Player>>({ stats: {}, teamId });
+  const [player, setPlayer] = useState<Partial<Player>>({ stats: {}, teamId, rosterStatus: 'in_roster' });
   const [valueInput, setValueInput] = useState('');
   const [selectedNationality, setSelectedNationality] = useState<Country | null>(null);
   const [newFileData, setNewFileData] = useState<string | null>(null);
@@ -274,7 +273,7 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
   const { toast } = useToast();
 
   const resetState = () => {
-    setPlayer({ stats: {}, teamId });
+    setPlayer({ stats: {}, teamId, rosterStatus: 'in_roster' });
     setSelectedNationality(null);
     setNewFileData(null);
     setIsSaving(false);
@@ -323,6 +322,10 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
   const handlePositionChange = (value: string) => {
     setPlayer(prev => ({ ...prev, position: value }));
   };
+  
+  const handleStatusChange = (value: PlayerRosterStatus) => {
+      setPlayer(prev => ({ ...prev, rosterStatus: value }));
+  };
 
   const handleSave = async () => {
     if (!player.name) {
@@ -356,6 +359,7 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
         nationality: selectedNationality?.value || '',
         birthDate: player.birthDate || '',
         value: parsePlayerValue(valueInput) ?? 0,
+        rosterStatus: player.rosterStatus || 'in_roster',
     };
 
     onSave(finalPlayer);
@@ -408,6 +412,18 @@ const AddPlayerDialog = ({ isOpen, onClose, onSave, teamId, players }: { isOpen:
                     ))}
                 </SelectContent>
             </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="rosterStatus" className="text-right">Categoría</Label>
+              <Select onValueChange={handleStatusChange} value={player.rosterStatus}>
+                  <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Selecciona una categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="in_roster">Plantilla Principal</SelectItem>
+                      <SelectItem value="legend">Leyenda</SelectItem>
+                  </SelectContent>
+              </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="imageUrl" className="text-right">Imagen</Label>
@@ -554,6 +570,11 @@ const EditPlayerDialog = ({
         return { ...prev, stats: newStats };
     });
   };
+  
+   const handleStatusChange = (value: PlayerRosterStatus) => {
+      if (!editedPlayer) return;
+      setEditedPlayer(prev => prev ? { ...prev, rosterStatus: value } : null);
+  };
 
   const handleSave = async () => {
     if (!editedPlayer) return;
@@ -664,6 +685,19 @@ const EditPlayerDialog = ({
                 </SelectContent>
             </Select>
           </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="rosterStatus" className="text-right">Categoría</Label>
+              <Select onValueChange={(val) => handleStatusChange(val as PlayerRosterStatus)} value={editedPlayer.rosterStatus}>
+                  <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Selecciona una categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="in_roster">Plantilla Principal</SelectItem>
+                      <SelectItem value="loaned">Prestado</SelectItem>
+                      <SelectItem value="legend">Leyenda</SelectItem>
+                  </SelectContent>
+              </Select>
+          </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="player-image" className="text-right">Foto</Label>
             <div className="col-span-3">
@@ -743,10 +777,11 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
   player: Player | null;
   teams: TeamInfo[];
   currentTeamId: string;
-  onMove: (player: Player, newTeamId: string, keepPhoto: boolean) => Promise<void>;
+  onMove: (player: Player, newTeamId: string, keepPhoto: boolean, markAsLoaned: boolean) => Promise<void>;
 }) => {
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [keepPhoto, setKeepPhoto] = useState(true);
+  const [markAsLoaned, setMarkAsLoaned] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
 
   useEffect(() => {
@@ -754,13 +789,14 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
       setSelectedTeamId('');
       setIsMoving(false);
       setKeepPhoto(true);
+      setMarkAsLoaned(false);
     }
   }, [isOpen]);
 
   const handleMove = async () => {
-    if (!player || !selectedTeamId) return;
+    if (!player || (!selectedTeamId && !markAsLoaned)) return;
     setIsMoving(true);
-    await onMove(player, selectedTeamId, keepPhoto);
+    await onMove(player, selectedTeamId, keepPhoto, markAsLoaned);
     setIsMoving(false);
     onClose();
   };
@@ -775,13 +811,13 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
         <DialogHeader>
           <DialogTitle>Mover a {player.name}</DialogTitle>
           <DialogDescription>
-            Selecciona el equipo de destino.
+            Selecciona el equipo de destino y las opciones de transferencia.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
           <div>
             <Label htmlFor="destination-team" className="mb-2 block">Mover a:</Label>
-            <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+            <Select value={selectedTeamId} onValueChange={setSelectedTeamId} disabled={markAsLoaned}>
               <SelectTrigger id="destination-team">
                 <SelectValue placeholder="Selecciona un equipo" />
               </SelectTrigger>
@@ -799,16 +835,32 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
                 id="keep-photo" 
                 checked={keepPhoto} 
                 onCheckedChange={(checked) => setKeepPhoto(Boolean(checked))}
-                disabled={!player.imageFileId}
+                disabled={!player.imageFileId || markAsLoaned}
             />
             <Label htmlFor="keep-photo" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Conservar foto actual
             </Label>
           </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+                id="mark-as-loaned" 
+                checked={markAsLoaned} 
+                onCheckedChange={(checked) => {
+                    const isChecked = Boolean(checked);
+                    setMarkAsLoaned(isChecked);
+                    if (isChecked) {
+                        setSelectedTeamId('');
+                    }
+                }}
+            />
+            <Label htmlFor="mark-as-loaned" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              ¿Marcar como prestado?
+            </Label>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isMoving}>Cancelar</Button>
-          <Button onClick={handleMove} disabled={!selectedTeamId || isMoving}>
+          <Button onClick={handleMove} disabled={(!selectedTeamId && !markAsLoaned) || isMoving}>
             {isMoving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRightLeft className="mr-2 h-4 w-4" />}
             Mover Jugador
           </Button>
@@ -816,6 +868,118 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
       </DialogContent>
     </Dialog>
   );
+};
+
+
+const PlayerListSection = ({ title, icon, players, onPlayerClick, onEdit, onMove, onDelete, onEndLoan, selectedPlayer, viewMode }: {
+    title: string;
+    icon: React.ReactNode;
+    players: Player[];
+    onPlayerClick: (player: Player) => void;
+    onEdit: (player: Player) => void;
+    onMove?: (player: Player) => void;
+    onDelete: (player: Player) => void;
+    onEndLoan?: (player: Player) => void;
+    selectedPlayer: Player | null;
+    viewMode: 'card' | 'list';
+}) => {
+    return (
+        <Card className="mt-8">
+            <CardHeader>
+                <CardTitle className="flex items-center text-xl font-headline text-primary">
+                    {icon}
+                    {title} ({players.length})
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                {players.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">No hay jugadores para mostrar en esta categoría.</p>
+                ) : viewMode === 'card' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {players.map(player => (
+                            <PlayerCard
+                                key={player.id}
+                                player={player}
+                                showStats={true}
+                                onSelect={onPlayerClick}
+                                isSelected={selectedPlayer?.id === player.id}
+                                onEdit={() => onEdit(player)}
+                                onMove={onMove ? () => onMove(player) : undefined}
+                                onDelete={() => onDelete(player)}
+                                onEndLoan={onEndLoan ? () => onEndLoan(player) : undefined}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="px-2 text-xs sm:px-4 sm:text-sm">Nombre</TableHead>
+                                    <TableHead className="text-center px-1 text-xs sm:px-4 sm:text-sm">Dorsal</TableHead>
+                                    <TableHead className="px-2 text-xs sm:px-4 sm:text-sm">Posición</TableHead>
+                                    <TableHead className="text-right px-2 text-xs sm:px-4 sm:text-sm">Acciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {players.map(player => (
+                                    <TableRow
+                                        key={player.id}
+                                        className={cn("cursor-pointer", selectedPlayer?.id === player.id && "bg-muted")}
+                                        onClick={() => onPlayerClick(player)}
+                                    >
+                                        <TableCell className="font-medium px-2 text-xs sm:px-4 sm:text-sm">{player.name}</TableCell>
+                                        <TableCell className="text-center px-1 text-xs sm:px-4 sm:text-sm">{player.jerseyNumber}</TableCell>
+                                        <TableCell className="px-2 text-xs sm:px-4 sm:text-sm">{player.position}</TableCell>
+                                        <TableCell className="text-right px-2 sm:px-4">
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600 hover:text-blue-700" onClick={(e) => { e.stopPropagation(); onEdit(player); }}>
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent><p>Editar</p></TooltipContent>
+                                                </Tooltip>
+                                                {onMove && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-sky-600 hover:text-sky-700" onClick={(e) => { e.stopPropagation(); onMove(player); }}>
+                                                                <ArrowRightLeft className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Mover</p></TooltipContent>
+                                                    </Tooltip>
+                                                )}
+                                                {onEndLoan && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                             <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-green-600 hover:text-green-700" onClick={(e) => { e.stopPropagation(); onEndLoan(player); }}>
+                                                                <RefreshCw className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Finalizar Préstamo</p></TooltipContent>
+                                                    </Tooltip>
+                                                )}
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(player); }}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent><p>Eliminar</p></TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
 };
 
 
@@ -832,6 +996,7 @@ export default function TeamViewPage() {
     const [isEditPlayerModalOpen, setEditPlayerModalOpen] = useState(false);
     const [isMovePlayerModalOpen, setMovePlayerModalOpen] = useState(false);
     const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
+    const [playerToEndLoan, setPlayerToEndLoan] = useState<Player | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
     const [selectedPosition, setSelectedPosition] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
@@ -844,20 +1009,36 @@ export default function TeamViewPage() {
 
     const positionOrder = useMemo(() => ['Portero', 'Defensa', 'Mediocampista', 'Delantero'], []);
 
-    const sortedPlayers = useMemo(() => {
-        if (!team?.players) return [];
-        return [...team.players].sort((a, b) => {
+    const { rosterPlayers, loanedPlayers, legendPlayers } = useMemo(() => {
+        if (!team?.players) return { rosterPlayers: [], loanedPlayers: [], legendPlayers: [] };
+        
+        const roster: Player[] = [];
+        const loaned: Player[] = [];
+        const legends: Player[] = [];
+
+        team.players.forEach(p => {
+            if (p.rosterStatus === 'loaned') loaned.push(p);
+            else if (p.rosterStatus === 'legend') legends.push(p);
+            else roster.push(p); // 'in_roster' or undefined
+        });
+        
+        const sortFn = (a: Player, b: Player) => {
             const posA = positionOrder.indexOf(a.position);
             const posB = positionOrder.indexOf(b.position);
-            if (posA !== posB) {
-                return posA - posB;
-            }
+            if (posA !== posB) return posA - posB;
             return (a.jerseyNumber || 999) - (b.jerseyNumber || 999);
-        });
+        };
+
+        return {
+            rosterPlayers: roster.sort(sortFn),
+            loanedPlayers: loaned.sort(sortFn),
+            legendPlayers: legends.sort(sortFn),
+        };
+
     }, [team?.players, positionOrder]);
 
-    const filteredPlayers = useMemo(() => {
-        let players = sortedPlayers;
+    const filteredRosterPlayers = useMemo(() => {
+        let players = rosterPlayers;
 
         if (selectedPosition !== 'all') {
             players = players.filter(p => p.position === selectedPosition);
@@ -872,7 +1053,7 @@ export default function TeamViewPage() {
         }
 
         return players;
-    }, [sortedPlayers, selectedPosition, searchTerm]);
+    }, [rosterPlayers, selectedPosition, searchTerm]);
     
     const finalCoachImageUrl = useMemo(() => {
         if (!team?.coach?.imageUrl) return null;
@@ -883,26 +1064,26 @@ export default function TeamViewPage() {
     }, [team]);
 
     const teamStats = useMemo(() => {
-        if (!team?.players) return null;
+        if (!rosterPlayers) return null;
 
-        const playersWithAge = team.players
+        const playersWithAge = rosterPlayers
             .map(p => ({ ...p, age: calculateAge(p.birthDate) }))
             .filter(p => p.age !== null);
 
         const totalAge = playersWithAge.reduce((sum, p) => sum + (p.age as number), 0);
         const averageAge = playersWithAge.length > 0 ? (totalAge / playersWithAge.length).toFixed(1) : 'N/A';
 
-        const foreignPlayers = team.players.filter(p => p.nationality && p.nationality !== 'CO').length;
+        const foreignPlayers = rosterPlayers.filter(p => p.nationality && p.nationality !== 'CO').length;
         
         const u20Players = playersWithAge.filter(p => (p.age as number) < 20).length;
 
         return {
-            totalPlayers: team.players.length,
+            totalPlayers: rosterPlayers.length,
             averageAge,
             foreignPlayers,
             u20Players,
         };
-    }, [team?.players]);
+    }, [rosterPlayers]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, user => {
@@ -973,14 +1154,14 @@ export default function TeamViewPage() {
             nationality: newPlayer.nationality ?? '',
             birthDate: newPlayer.birthDate ?? '',
             value: newPlayer.value ?? 0,
+            rosterStatus: newPlayer.rosterStatus || 'in_roster',
         };
 
         try {
             const teamRef = doc(db, "equipos", teamId);
             await updateDoc(teamRef, { players: arrayUnion(playerToAdd) });
             
-            const updatedTeam = { ...team, players: [...team.players, playerToAdd] };
-            setTeam(updatedTeam);
+            await fetchTeamData(); // Refetch to get sorted lists
         } catch (error) {
             console.error("Error adding player: ", error);
             toast({ variant: 'destructive', title: 'Error', description: 'No se pudo agregar el jugador.' });
@@ -995,8 +1176,8 @@ export default function TeamViewPage() {
                 p.id === updatedPlayer.id ? updatedPlayer : p
             );
             await updateDoc(teamRef, { players: updatedPlayers });
-
-            setTeam(prevTeam => prevTeam ? { ...prevTeam, players: updatedPlayers } : null);
+            
+            await fetchTeamData(); // Refetch to get sorted and filtered lists
             setSelectedPlayer(null);
             toast({ title: 'Éxito', description: 'Jugador actualizado correctamente.' });
         } catch (error) {
@@ -1024,7 +1205,7 @@ export default function TeamViewPage() {
               await updateDoc(teamRef, { players: arrayRemove(originalPlayerObject) });
             }
             
-            setTeam(prevTeam => prevTeam ? { ...prevTeam, players: prevTeam.players.filter(p => p.id !== playerToDelete.id) } : null);
+            await fetchTeamData(); // Refetch
             setPlayerToDelete(null);
             setSelectedPlayer(null);
             toast({ title: 'Éxito', description: 'Jugador eliminado correctamente.' });
@@ -1034,8 +1215,29 @@ export default function TeamViewPage() {
         }
     };
 
-    const handleMovePlayer = async (playerToMove: Player, newTeamId: string, keepPhoto: boolean) => {
+    const handleMovePlayer = async (playerToMove: Player, newTeamId: string, keepPhoto: boolean, markAsLoaned: boolean) => {
         if (!team || !playerToMove) return;
+
+        if (markAsLoaned) {
+             try {
+                const teamRef = doc(db, "equipos", teamId);
+                const updatedPlayers = team.players.map(p => 
+                    p.id === playerToMove.id ? { ...p, rosterStatus: 'loaned' as PlayerRosterStatus } : p
+                );
+                await updateDoc(teamRef, { players: updatedPlayers });
+                await fetchTeamData();
+                toast({ title: 'Jugador Prestado', description: `${playerToMove.name} ha sido marcado como prestado.` });
+            } catch (error: any) {
+                console.error("Error al marcar como prestado:", error);
+                toast({ variant: "destructive", title: "Error en el préstamo", description: error.message || "No se pudo marcar el jugador como prestado." });
+            }
+            return;
+        }
+
+        if (!newTeamId) {
+            toast({ variant: "destructive", title: "Acción requerida", description: "Debes seleccionar un equipo de destino para mover al jugador." });
+            return;
+        }
 
         const oldTeamRef = doc(db, "equipos", teamId);
         const newTeamRef = doc(db, "equipos", newTeamId);
@@ -1054,15 +1256,15 @@ export default function TeamViewPage() {
 
                 const playerInOldTeam = oldTeamData.players.find(p => p.id === playerToMove.id);
                 if (!playerInOldTeam) {
-                    console.error("Player to move:", playerToMove);
-                    console.error("Old team players:", oldTeamData.players);
                     throw new Error("El jugador no se encontró en el equipo original.");
                 }
+
+                const updatedOldPlayers = oldTeamData.players.filter(p => p.id !== playerToMove.id);
+                transaction.update(oldTeamRef, { players: updatedOldPlayers });
 
                 let newImageFileId = playerInOldTeam.imageFileId;
                 let newImageUrl = playerInOldTeam.imageUrl;
                 let needsPhotoUpdate = playerInOldTeam.needsPhotoUpdate;
-
                 const newPlayerId = getNextAvailablePlayerId(newTeamId, newTeamData.players || []);
 
                 if (keepPhoto && playerInOldTeam.imageFileId) {
@@ -1073,33 +1275,23 @@ export default function TeamViewPage() {
                         newImageUrl = moveResult.url;
                         needsPhotoUpdate = false;
                     } else {
-                        toast({
-                            variant: 'destructive',
-                            title: 'Error al Mover Foto',
-                            description: `No se pudo mover la foto, el jugador será movido sin ella. ${moveResult.error || ''}`
-                        });
-                        newImageFileId = '';
-                        newImageUrl = '';
-                        needsPhotoUpdate = true;
+                        toast({ variant: 'destructive', title: 'Error al Mover Foto', description: `No se pudo mover la foto, el jugador será movido sin ella. ${moveResult.error || ''}` });
+                        newImageFileId = ''; newImageUrl = ''; needsPhotoUpdate = true;
                     }
                 } else if (!keepPhoto && playerInOldTeam.imageFileId) {
                     await deleteImage(playerInOldTeam.imageFileId);
-                    newImageFileId = '';
-                    newImageUrl = '';
-                    needsPhotoUpdate = true;
+                    newImageFileId = ''; newImageUrl = ''; needsPhotoUpdate = true;
                 }
-
+                
                 const movedPlayer: Player = {
                     ...playerInOldTeam,
                     id: newPlayerId,
                     teamId: newTeamId,
+                    rosterStatus: 'in_roster',
                     needsPhotoUpdate: needsPhotoUpdate,
                     imageUrl: newImageUrl || '',
                     imageFileId: newImageFileId || '',
                 };
-
-                const updatedOldPlayers = oldTeamData.players.filter(p => p.id !== playerToMove.id);
-                transaction.update(oldTeamRef, { players: updatedOldPlayers });
 
                 const updatedNewPlayers = [...(newTeamData.players || []), movedPlayer];
                 transaction.update(newTeamRef, { players: updatedNewPlayers });
@@ -1115,6 +1307,25 @@ export default function TeamViewPage() {
         }
     };
     
+     const handleEndLoan = async () => {
+        if (!playerToEndLoan || !team) return;
+        try {
+            const teamRef = doc(db, "equipos", teamId);
+            const updatedPlayers = team.players.map(p =>
+                p.id === playerToEndLoan.id ? { ...p, rosterStatus: 'in_roster' as PlayerRosterStatus } : p
+            );
+            await updateDoc(teamRef, { players: updatedPlayers });
+
+            await fetchTeamData();
+            setPlayerToEndLoan(null);
+            setSelectedPlayer(null);
+            toast({ title: 'Préstamo Finalizado', description: `${playerToEndLoan.name} ha vuelto a la plantilla principal.` });
+        } catch (error) {
+            console.error("Error ending loan:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo finalizar el préstamo del jugador." });
+        }
+    };
+
     const handleClearAllPlayerStats = async () => {
         if (!team) return;
 
@@ -1126,8 +1337,8 @@ export default function TeamViewPage() {
         try {
             const teamRef = doc(db, "equipos", teamId);
             await updateDoc(teamRef, { players: updatedPlayers });
-
-            setTeam(prevTeam => prevTeam ? { ...prevTeam, players: updatedPlayers } : null);
+            
+            await fetchTeamData();
             toast({ title: 'Estadísticas Limpiadas', description: `Se han restablecido las estadísticas de todos los jugadores de ${team.name}.` });
         } catch (error) {
             console.error("Error clearing player stats: ", error);
@@ -1172,13 +1383,13 @@ export default function TeamViewPage() {
         return <div className="min-h-screen flex items-center justify-center">No se pudo encontrar el equipo.</div>;
     }
 
-    const { name, logoUrl, coach, players } = team;
+    const { name, logoUrl, coach } = team;
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col items-center p-4 md:p-8">
             <div className="w-full max-w-6xl">
                 <header className="mb-8 flex w-full items-center justify-between">
-                    <Button variant="ghost" size="icon" onClick={() => router.push('/admin')} className="text-primary hover:bg-transparent">
+                    <Button onClick={() => router.push('/admin')} variant="ghost">
                         <ArrowLeft />
                     </Button>
                     <div className="flex items-center justify-center gap-4">
@@ -1283,7 +1494,7 @@ export default function TeamViewPage() {
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                     <CardTitle className="flex items-center text-xl font-headline text-primary">
                                         <Users className="mr-3 h-6 w-6" />
-                                        Jugadores ({players.length})
+                                        Jugadores ({rosterPlayers.length})
                                     </CardTitle>
                                     <div className="flex items-center gap-2 flex-wrap justify-end">
                                         <div className="flex items-center gap-1">
@@ -1355,7 +1566,7 @@ export default function TeamViewPage() {
                             <CardContent>
                                 {viewMode === 'card' ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {filteredPlayers.map(player => (
+                                        {filteredRosterPlayers.map(player => (
                                             <PlayerCard 
                                             key={player.id} 
                                             player={player} 
@@ -1381,7 +1592,7 @@ export default function TeamViewPage() {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {filteredPlayers.map(player => {
+                                                {filteredRosterPlayers.map(player => {
                                                     const country = player.nationality ? countryMap.get(player.nationality) : null;
                                                     return (
                                                     <TableRow 
@@ -1404,7 +1615,7 @@ export default function TeamViewPage() {
                                                              <TooltipProvider>
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
-                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); setEditPlayerModalOpen(true); }}>
+                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600 hover:text-blue-700" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); setEditPlayerModalOpen(true); }}>
                                                                             <Edit className="h-4 w-4" />
                                                                         </Button>
                                                                     </TooltipTrigger>
@@ -1412,7 +1623,7 @@ export default function TeamViewPage() {
                                                                 </Tooltip>
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
-                                                                         <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); setMovePlayerModalOpen(true); }}>
+                                                                         <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-sky-600 hover:text-sky-700" onClick={(e) => { e.stopPropagation(); setSelectedPlayer(player); setMovePlayerModalOpen(true); }}>
                                                                             <ArrowRightLeft className="h-4 w-4" />
                                                                         </Button>
                                                                     </TooltipTrigger>
@@ -1420,11 +1631,9 @@ export default function TeamViewPage() {
                                                                 </Tooltip>
                                                                 <Tooltip>
                                                                     <TooltipTrigger asChild>
-                                                                        <AlertDialogTrigger asChild>
-                                                                            <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setPlayerToDelete(player); }}>
-                                                                                <Trash2 className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </AlertDialogTrigger>
+                                                                        <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setPlayerToDelete(player); }}>
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
                                                                     </TooltipTrigger>
                                                                     <TooltipContent><p>Eliminar</p></TooltipContent>
                                                                 </Tooltip>
@@ -1436,13 +1645,36 @@ export default function TeamViewPage() {
                                         </Table>
                                     </div>
                                 )}
-                                 {filteredPlayers.length === 0 && (
+                                 {filteredRosterPlayers.length === 0 && (
                                     <div className="text-center py-8 text-muted-foreground">
-                                        No hay jugadores para mostrar.
+                                        No hay jugadores para mostrar en la plantilla principal.
                                     </div>
                                 )}
                             </CardContent>
                         </Card>
+                         <PlayerListSection
+                            title="Jugadores Prestados"
+                            icon={<Bookmark className="mr-3 h-6 w-6 text-orange-500" />}
+                            players={loanedPlayers}
+                            onPlayerClick={handlePlayerClick}
+                            onEdit={(player) => { setSelectedPlayer(player); setEditPlayerModalOpen(true); }}
+                            onDelete={setPlayerToDelete}
+                            onEndLoan={(player) => { setPlayerToEndLoan(player); }}
+                            selectedPlayer={selectedPlayer}
+                            viewMode={viewMode}
+                        />
+
+                        <PlayerListSection
+                            title="Leyendas del Club"
+                            icon={<Star className="mr-3 h-6 w-6 text-yellow-500" />}
+                            players={legendPlayers}
+                            onPlayerClick={handlePlayerClick}
+                            onEdit={(player) => { setSelectedPlayer(player); setEditPlayerModalOpen(true); }}
+                            onMove={(player) => { setSelectedPlayer(player); setMovePlayerModalOpen(true); }}
+                            onDelete={setPlayerToDelete}
+                            selectedPlayer={selectedPlayer}
+                            viewMode={viewMode}
+                        />
                     </div>
                 </main>
             </div>
@@ -1489,6 +1721,22 @@ export default function TeamViewPage() {
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDeletePlayer}>
+                            Confirmar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={!!playerToEndLoan} onOpenChange={(isOpen) => !isOpen && setPlayerToEndLoan(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Finalizar Préstamo</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            ¿Estás seguro de que deseas finalizar el préstamo de {playerToEndLoan?.name}? Volverá a la plantilla principal de este equipo.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleEndLoan}>
                             Confirmar
                         </AlertDialogAction>
                     </AlertDialogFooter>

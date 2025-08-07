@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, Suspense, useMemo } from 'react';
@@ -239,7 +238,7 @@ function LineupShowdownComponent() {
   return (
     <div className="min-h-screen bg-background text-foreground px-4 md:px-8 pt-2 md:pt-4 pb-4 md:pb-8">
       <header className="mb-0 flex w-full items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-primary hover:bg-transparent">
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft />
         </Button>
         <div className="text-center">
