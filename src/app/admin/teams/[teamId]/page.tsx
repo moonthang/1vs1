@@ -50,7 +50,7 @@ import logo1vs1 from '@/assets/logo/1vs1.png';
 import { NationalitySelector } from '@/components/NationalitySelector';
 import { countryMap } from '@/data/countries';
 import { ScrollToTopButton } from '@/components/ScrollToTopButton';
-import { calculateAge, cn } from '@/lib/utils';
+import { calculateAge, cn, normalizeText } from '@/lib/utils';
 import type { UploadResponse } from '@/actions/uploadActions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -822,7 +822,7 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
               <SelectTrigger id="destination-team">
                 <SelectValue placeholder="Selecciona un equipo" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px]">
                 {availableTeams.map(team => (
                   <SelectItem key={team.id} value={team.id}>
                     {team.name}
@@ -999,8 +999,6 @@ export default function TeamViewPage() {
     const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
     const [isSearchActive, setIsSearchActive] = useState(false);
     
-    const positionOrder = useMemo(() => ['Portero', 'Defensa', 'Mediocampista', 'Delantero'], []);
-
     const { rosterPlayers, loanedPlayers, legendPlayers } = useMemo(() => {
         if (!team?.players) return { rosterPlayers: [], loanedPlayers: [], legendPlayers: [] };
         
@@ -1014,10 +1012,14 @@ export default function TeamViewPage() {
             else roster.push(p); // 'in_roster' or undefined
         });
         
+        const positionOrder: (string | undefined)[] = ['Portero', 'Defensa', 'Mediocampista', 'Delantero', undefined];
+
         const sortFn = (a: Player, b: Player) => {
-            const posA = positionOrder.indexOf(a.position);
-            const posB = positionOrder.indexOf(b.position);
-            if (posA !== posB) return posA - posB;
+            const posAIndex = positionOrder.indexOf(a.position);
+            const posBIndex = positionOrder.indexOf(b.position);
+            if (posAIndex !== posBIndex) {
+                return posAIndex - posBIndex;
+            }
             return (a.jerseyNumber || 999) - (b.jerseyNumber || 999);
         };
 
@@ -1027,15 +1029,15 @@ export default function TeamViewPage() {
             legendPlayers: legends.sort(sortFn),
         };
 
-    }, [team?.players, positionOrder]);
+    }, [team?.players]);
 
     const filteredRosterPlayers = useMemo(() => {
         let players = rosterPlayers;
 
         if (searchTerm) {
-            const term = searchTerm.toLowerCase();
+            const term = normalizeText(searchTerm);
             players = players.filter(p => 
-                p.name.toLowerCase().includes(term) || 
+                normalizeText(p.name).includes(term) || 
                 p.jerseyNumber?.toString().includes(term)
             );
         }
@@ -1252,9 +1254,13 @@ export default function TeamViewPage() {
                     id: newPlayerId,
                     teamId: newTeamId,
                     rosterStatus: 'in_roster',
-                    needsPhotoUpdate: needsPhotoUpdate,
+                    needsPhotoUpdate: needsPhotoUpdate ?? true,
                     imageUrl: newImageUrl || '',
                     imageFileId: newImageFileId || '',
+                    nationality: playerInOldTeam.nationality || '',
+                    birthDate: playerInOldTeam.birthDate || '',
+                    value: playerInOldTeam.value || 0,
+                    stats: playerInOldTeam.stats || {},
                 };
     
                 const updatedNewPlayers = [...(newTeamData.players || []), movedPlayer];
@@ -1548,7 +1554,6 @@ export default function TeamViewPage() {
                                                 <TableRow>
                                                     <TableHead className="px-2 text-xs sm:px-4 sm:text-sm">Nombre</TableHead>
                                                     <TableHead className="text-center px-1 text-xs sm:px-4 sm:text-sm">Dorsal</TableHead>
-                                                    <TableHead className="px-2 text-xs sm:px-4 sm:text-sm">Posición</TableHead>
                                                     <TableHead className="px-2 hidden sm:table-cell text-xs sm:px-4 sm:text-sm">Nacionalidad</TableHead>
                                                     <TableHead className="text-right px-2 text-xs sm:px-4 sm:text-sm">Acciones</TableHead>
                                                 </TableRow>
@@ -1564,7 +1569,6 @@ export default function TeamViewPage() {
                                                     >
                                                         <TableCell className="font-medium px-2 text-xs sm:px-4 sm:text-sm">{player.name}</TableCell>
                                                         <TableCell className="text-center px-1 text-xs sm:px-4 sm:text-sm">{player.jerseyNumber}</TableCell>
-                                                        <TableCell className="px-2 text-xs sm:px-4 sm:text-sm">{player.position}</TableCell>
                                                         <TableCell className="px-2 hidden sm:table-cell">
                                                             {country && (
                                                                 <div className="flex items-center gap-2">

@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { useLineupStore } from '@/store/lineupStore';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Trash2 } from 'lucide-react';
+import { normalizeText } from '@/lib/utils';
 
 interface PlayerComparisonModalProps {
   isOpen: boolean;
@@ -97,8 +98,9 @@ export function PlayerComparisonModal({ isOpen, onClose, positionSlotKey }: Play
     
     if (searchTerm.trim() !== '') {
       const allPlayers = isCoachSlot ? eligibleSlotPlayers : allTeamPlayers;
+      const normalizedSearch = normalizeText(searchTerm);
       playersToDisplay = allPlayers.filter(player =>
-        player.name.toLowerCase().includes(searchTerm.toLowerCase())
+        normalizeText(player.name).includes(normalizedSearch)
       );
     } else {
       playersToDisplay = eligibleSlotPlayers;
