@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -794,7 +795,7 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
   }, [isOpen]);
 
   const handleMove = async () => {
-    if (!player || (!selectedTeamId && !markAsLoaned)) return;
+    if (!player || !selectedTeamId) return;
     setIsMoving(true);
     await onMove(player, selectedTeamId, keepPhoto, markAsLoaned);
     setIsMoving(false);
@@ -817,7 +818,7 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
         <div className="py-4 space-y-4">
           <div>
             <Label htmlFor="destination-team" className="mb-2 block">Mover a:</Label>
-            <Select value={selectedTeamId} onValueChange={setSelectedTeamId} disabled={markAsLoaned}>
+            <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
               <SelectTrigger id="destination-team">
                 <SelectValue placeholder="Selecciona un equipo" />
               </SelectTrigger>
@@ -835,7 +836,7 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
                 id="keep-photo" 
                 checked={keepPhoto} 
                 onCheckedChange={(checked) => setKeepPhoto(Boolean(checked))}
-                disabled={!player.imageFileId || markAsLoaned}
+                disabled={!player.imageFileId}
             />
             <Label htmlFor="keep-photo" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               Conservar foto actual
@@ -845,13 +846,7 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
             <Checkbox 
                 id="mark-as-loaned" 
                 checked={markAsLoaned} 
-                onCheckedChange={(checked) => {
-                    const isChecked = Boolean(checked);
-                    setMarkAsLoaned(isChecked);
-                    if (isChecked) {
-                        setSelectedTeamId('');
-                    }
-                }}
+                onCheckedChange={(checked) => setMarkAsLoaned(Boolean(checked))}
             />
             <Label htmlFor="mark-as-loaned" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
               ¿Marcar como prestado?
@@ -860,7 +855,7 @@ const MovePlayerDialog = ({ isOpen, onClose, player, teams, currentTeamId, onMov
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isMoving}>Cancelar</Button>
-          <Button onClick={handleMove} disabled={(!selectedTeamId && !markAsLoaned) || isMoving}>
+          <Button onClick={handleMove} disabled={!selectedTeamId || isMoving}>
             {isMoving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRightLeft className="mr-2 h-4 w-4" />}
             Mover Jugador
           </Button>
@@ -998,15 +993,12 @@ export default function TeamViewPage() {
     const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
     const [playerToEndLoan, setPlayerToEndLoan] = useState<Player | null>(null);
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-    const [selectedPosition, setSelectedPosition] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isLoadingAuth, setIsLoadingAuth] = useState(true);
     const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
     const [isSearchActive, setIsSearchActive] = useState(false);
     
-    const positionOptions = ['all', ...playerPositions];
-
     const positionOrder = useMemo(() => ['Portero', 'Defensa', 'Mediocampista', 'Delantero'], []);
 
     const { rosterPlayers, loanedPlayers, legendPlayers } = useMemo(() => {
@@ -1040,10 +1032,6 @@ export default function TeamViewPage() {
     const filteredRosterPlayers = useMemo(() => {
         let players = rosterPlayers;
 
-        if (selectedPosition !== 'all') {
-            players = players.filter(p => p.position === selectedPosition);
-        }
-
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
             players = players.filter(p => 
@@ -1053,7 +1041,7 @@ export default function TeamViewPage() {
         }
 
         return players;
-    }, [rosterPlayers, selectedPosition, searchTerm]);
+    }, [rosterPlayers, searchTerm]);
     
     const finalCoachImageUrl = useMemo(() => {
         if (!team?.coach?.imageUrl) return null;
@@ -1216,57 +1204,33 @@ export default function TeamViewPage() {
     };
 
     const handleMovePlayer = async (playerToMove: Player, newTeamId: string, keepPhoto: boolean, markAsLoaned: boolean) => {
-        if (!team || !playerToMove) return;
-
-        if (markAsLoaned) {
-             try {
-                const teamRef = doc(db, "equipos", teamId);
-                const updatedPlayers = team.players.map(p => 
-                    p.id === playerToMove.id ? { ...p, rosterStatus: 'loaned' as PlayerRosterStatus } : p
-                );
-                await updateDoc(teamRef, { players: updatedPlayers });
-                await fetchTeamData();
-                toast({ title: 'Jugador Prestado', description: `${playerToMove.name} ha sido marcado como prestado.` });
-            } catch (error: any) {
-                console.error("Error al marcar como prestado:", error);
-                toast({ variant: "destructive", title: "Error en el préstamo", description: error.message || "No se pudo marcar el jugador como prestado." });
-            }
-            return;
-        }
-
-        if (!newTeamId) {
-            toast({ variant: "destructive", title: "Acción requerida", description: "Debes seleccionar un equipo de destino para mover al jugador." });
-            return;
-        }
-
+        if (!team || !playerToMove || !newTeamId) return;
+    
         const oldTeamRef = doc(db, "equipos", teamId);
         const newTeamRef = doc(db, "equipos", newTeamId);
-
+    
         try {
             await runTransaction(db, async (transaction) => {
                 const oldTeamDoc = await transaction.get(oldTeamRef);
                 const newTeamDoc = await transaction.get(newTeamRef);
-
+    
                 if (!oldTeamDoc.exists() || !newTeamDoc.exists()) {
                     throw new Error("Uno de los equipos no existe.");
                 }
-                
+    
                 const oldTeamData = oldTeamDoc.data() as Team;
                 const newTeamData = newTeamDoc.data() as Team;
-
+    
                 const playerInOldTeam = oldTeamData.players.find(p => p.id === playerToMove.id);
                 if (!playerInOldTeam) {
                     throw new Error("El jugador no se encontró en el equipo original.");
                 }
-
-                const updatedOldPlayers = oldTeamData.players.filter(p => p.id !== playerToMove.id);
-                transaction.update(oldTeamRef, { players: updatedOldPlayers });
-
+    
                 let newImageFileId = playerInOldTeam.imageFileId;
                 let newImageUrl = playerInOldTeam.imageUrl;
                 let needsPhotoUpdate = playerInOldTeam.needsPhotoUpdate;
                 const newPlayerId = getNextAvailablePlayerId(newTeamId, newTeamData.players || []);
-
+    
                 if (keepPhoto && playerInOldTeam.imageFileId) {
                     const newFileName = `${newPlayerId}_${playerInOldTeam.name.replace(/\s+/g, '_')}.png`;
                     const moveResult = await moveImage(playerInOldTeam.imageFileId, `/${newTeamId}`, newFileName);
@@ -1282,7 +1246,7 @@ export default function TeamViewPage() {
                     await deleteImage(playerInOldTeam.imageFileId);
                     newImageFileId = ''; newImageUrl = ''; needsPhotoUpdate = true;
                 }
-                
+    
                 const movedPlayer: Player = {
                     ...playerInOldTeam,
                     id: newPlayerId,
@@ -1292,15 +1256,25 @@ export default function TeamViewPage() {
                     imageUrl: newImageUrl || '',
                     imageFileId: newImageFileId || '',
                 };
-
+    
                 const updatedNewPlayers = [...(newTeamData.players || []), movedPlayer];
                 transaction.update(newTeamRef, { players: updatedNewPlayers });
+    
+                if (markAsLoaned) {
+                    const updatedOldPlayers = oldTeamData.players.map(p =>
+                        p.id === playerToMove.id ? { ...p, rosterStatus: 'loaned' as PlayerRosterStatus } : p
+                    );
+                    transaction.update(oldTeamRef, { players: updatedOldPlayers });
+                } else {
+                    const updatedOldPlayers = oldTeamData.players.filter(p => p.id !== playerToMove.id);
+                    transaction.update(oldTeamRef, { players: updatedOldPlayers });
+                }
             });
-
+    
             await fetchTeamData();
             setSelectedPlayer(null);
             toast({ title: 'Jugador Movido', description: `${playerToMove.name} ha sido transferido.` });
-
+    
         } catch (error: any) {
             console.error("Error al mover jugador:", error);
             toast({ variant: "destructive", title: "Error en la transferencia", description: error.message || "No se pudo completar la transferencia del jugador." });
@@ -1522,18 +1496,6 @@ export default function TeamViewPage() {
                                                 <List className="h-4 w-4" />
                                             </Button>
                                         </div>
-                                         <Select value={selectedPosition} onValueChange={setSelectedPosition}>
-                                            <SelectTrigger className="w-[180px]">
-                                                <SelectValue placeholder="Filtrar por posición" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {positionOptions.map(pos => (
-                                                    <SelectItem key={pos} value={pos}>
-                                                        {pos === 'all' ? 'Todas las posiciones' : pos}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="secondary" size="sm">
